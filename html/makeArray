@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="jquery-2.0.3.js"> </script>
+</head>
+<body>
+
+	<script >
+	var t={name:"t",age:"t1"};
+	var tt=[1,2,3];
+
+	$.each(t,function(j){
+	console.log(j);  //1;   1    每次迭代输出一个值
+	},tt)
+
+	$.each(tt,function(j){
+	console.log(j);  //1;   1
+	},t)//undefinded ;undefined ;undefined   每次迭代输出一个值
+
+	$.each(t,function(j){
+	console.log(j); //name; age
+	})
+
+	$.each(t,function(i,j){
+	console.log(i+" "+j);//name t; age t1
+	})
+
+	$.each(tt,function(i,j){
+	console.log(i+" "+j);//0 1; 1 2; 2 3;
+	})
+	</script>
+</body>
+</html>

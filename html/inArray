@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="../jquery-2.0.3.js"> </script>
+</head>
+<body>
+
+	<script >
+	var arr = []; 
+	arr[1] = 1;
+	var rut= $.inArray(undefined, arr, 0);
+	console.log(rut);
+
+	var arr="tttt";
+	var arr1=$.makeArray(arr,{1:0});
+	console.log(arr1);
+	</script>
+</body>
+</html>
