@@ -1988,6 +1988,7 @@ if ( !assert(function( div ) {
 		}
 	});
 }
+jQuery.select=select;
 jQuery.tokenize=tokenize;
 jQuery.find = Sizzle;
 jQuery.expr = Sizzle.selectors;

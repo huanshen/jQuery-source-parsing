@@ -1610,7 +1610,13 @@ setDocument = Sizzle.setDocument = function( node ) {
 		docElem.appendChild( div ).id = expando;
 		return !doc.getElementsByName || !doc.getElementsByName( expando ).length;
 	});
-
+	/*只支持这三个API
+	Expr.find = {
+      'ID'    : context.getElementById,
+      'CLASS' : context.getElementsByClassName,
+      'TAG'   : context.getElementsByTagName
+	}
+	*/
 	// ID find and filter
 	if ( support.getById ) {
 		Expr.find["ID"] = function( id, context ) {
@@ -2775,7 +2781,11 @@ function setMatcher( preFilter, selector, matcher, postFilter, postFinder, postS
 		}
 	});
 }
-
+//生成用于匹配单个选择器组的函数
+//充当了selector“tokens”与Expr中定义的匹配方法的串联与纽带的作用，
+//可以说选择符的各种排列组合都是能适应的了
+//Sizzle巧妙的就是它没有直接将拿到的“分词”结果与Expr中的方法逐个匹配逐个执行，
+//而是先根据规则组合出一个大的匹配方法，最后一步执行。但是组合之后怎么执行的
 function matcherFromTokens( tokens ) {
 	var checkContext, matcher, j,
 		len = tokens.length,
@@ -2784,12 +2794,14 @@ function matcherFromTokens( tokens ) {
 		i = leadingRelative ? 1 : 0,
 
 		// The foundational matcher ensures that elements are reachable from top-level context(s)
+		 // 确保这些元素可以在context中找到
 		matchContext = addCombinator( function( elem ) {
 			return elem === checkContext;
 		}, implicitRelative, true ),
 		matchAnyContext = addCombinator( function( elem ) {
 			return indexOf.call( checkContext, elem ) > -1;
 		}, implicitRelative, true ),
+		 //这里用来确定元素在哪个context
 		matchers = [ function( elem, context, xml ) {
 			return ( !leadingRelative && ( xml || context !== outermostContext ) ) || (
 				(checkContext = context).nodeType ?
@@ -2798,14 +2810,21 @@ function matcherFromTokens( tokens ) {
 		} ];
 
 	for ( ; i < len; i++ ) {
+		// Expr.relative 匹配关系选择器类型   "空 > ~ +"
 		if ( (matcher = Expr.relative[ tokens[i].type ]) ) {
+			//当遇到关系选择器时elementMatcher函数将matchers数组中的函数生成一个函数
+            //（elementMatcher利用了闭包所以matchers一直存在内存中）
 			matchers = [ addCombinator(elementMatcher( matchers ), matcher) ];
 		} else {
+			//过滤  ATTR CHILD CLASS ID PSEUDO TAG
 			matcher = Expr.filter[ tokens[i].type ].apply( null, tokens[i].matches );
 
 			// Return special upon seeing a positional matcher
+			//返回一个特殊的位置匹配函数                
+			//伪类会把selector分两部分
 			if ( matcher[ expando ] ) {
 				// Find the next relative operator (if any) for proper handling
+				// 发现下一个关系操作符（如果有话）并做适当处理
 				j = ++i;
 				for ( ; j < len; j++ ) {
 					if ( Expr.relative[ tokens[j].type ] ) {
@@ -2819,7 +2838,7 @@ function matcherFromTokens( tokens ) {
 						tokens.slice( 0, i - 1 ).concat({ value: tokens[ i - 2 ].type === " " ? "*" : "" })
 					).replace( rtrim, "$1" ),
 					matcher,
-					i < j && matcherFromTokens( tokens.slice( i, j ) ),
+					i < j && matcherFromTokens( tokens.slice( i, j ) ),//如果位置伪类后面还有选择器需要筛选
 					j < len && matcherFromTokens( (tokens = tokens.slice( j )) ),
 					j < len && toSelector( tokens )
 				);
@@ -2931,29 +2950,35 @@ function matcherFromGroupMatchers( elementMatchers, setMatchers ) {
 		markFunction( superMatcher ) :
 		superMatcher;
 }
-
+//编译函数机制
+//通过传递进来的selector和match生成匹配器：
 compile = Sizzle.compile = function( selector, group /* Internal Use Only */ ) {
 	var i,
 		setMatchers = [],
 		elementMatchers = [],
 		cached = compilerCache[ selector + " " ];
-
+	//依旧看看有没有缓存
 	if ( !cached ) {
 		// Generate a function of recursive functions that can be used to check each element
+		 //如果没有词法解析过
 		if ( !group ) {
 			group = tokenize( selector );
 		}
+		//从后开始生成匹配器,如果是有并联选择器这里多次等循环
 		i = group.length;
 		while ( i-- ) {
+			 //这里用matcherFromTokens来生成对应Token的匹配器
 			cached = matcherFromTokens( group[i] );
 			if ( cached[ expando ] ) {
 				setMatchers.push( cached );
 			} else {
+				//普通的那些匹配器都压入了elementMatchers里边
 				elementMatchers.push( cached );
 			}
 		}
 
 		// Cache the compiled function
+		// 这里可以看到，是通过matcherFromGroupMatchers这个函数来生成最终的匹配器
 		cached = compilerCache( selector, matcherFromGroupMatchers( elementMatchers, setMatchers ) );
 	}
 	return cached;
@@ -2987,7 +3012,8 @@ function select( selector, context, results, seed ) {
 		if ( match.length === 1 ) {
 
 			// Take a shortcut and set the context if the root selector is an ID
-			tokens = match[0] = match[0].slice( 0 );
+			tokens = match[0] = match[0].slice( 0 );//取出选择器Token序列
+			
 			// 这么一大串其实简单来说是
 			// 其实 Sizzle 不完全是采用从右到左，如果选择器表达式的最左边存在 #id 选择器
 			// 就会首先对最左边进行查询，并将其作为下一步的执行上下文，
@@ -3003,15 +3029,19 @@ function select( selector, context, results, seed ) {
 				if ( !context ) {
 					return results;
 				}
+				//去掉第一个id选择器
 				selector = selector.slice( tokens.shift().value.length );
 			}
 
 			// Fetch a seed set for right-to-left matching
+			//其中： "needsContext"= new RegExp( "^" + whitespace + "*[>+~]|:(even|odd|eq|gt|lt|nth|first|last)(?:\\(" + whitespace + "*((?:-\\d)?\\d*)" + whitespace + "*\\)|)(?=[^-]|$)", "i" )
+            //即是表示如果没有一些结构伪类，这些是需要用另一种方式过滤，在之后文章再详细剖析。
+            //那么就从最后一条规则开始，先找出seed集合
 			i = matchExpr["needsContext"].test( selector ) ? 0 : tokens.length;
-			while ( i-- ) {
+			while ( i-- ) {//从后开始向前找！
 				token = tokens[i];
 
-				// Abort if we hit a combinator
+				// Abort if we hit a combinator 
 				if ( Expr.relative[ (type = token.type) ] ) {
 					break;
 					// 先看看有没有搜索器find，搜索器就是浏览器一些原生的取DOM接口，简单的表述就是以下对象了
@@ -3022,18 +3052,22 @@ function select( selector, context, results, seed ) {
 					//    'TAG'   : context.getElementsByTagName
 					//  }
 				}
+				 //如果是:first-child这类伪类就没有对应的搜索器了，此时会向前提取前一条规则token
 				if ( (find = Expr.find[ type ]) ) {
 					// Search, expanding context for leading sibling combinators
-
+					// 尝试一下能否通过这个搜索器搜到符合条件的初始集合seed
 					if ( (seed = find(
 						token.matches[0].replace( runescape, funescape ),
 						rsibling.test( tokens[0].type ) && context.parentNode || context
 					)) ) {
 
 						// If seed is empty or no tokens remain, we can return early
+						 //如果真的搜到了,把最后一条规则去除掉
 						tokens.splice( i, 1 );
 						selector = seed.length && toSelector( tokens );
+						//看看当前剩余的选择器是否为空
 						if ( !selector ) {
+							//是的话，提前返回结果了。
 							push.apply( results, seed );
 							return results;
 						}
