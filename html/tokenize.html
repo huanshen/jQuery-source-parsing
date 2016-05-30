@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="../jquery-2.0.3.js"> </script>
+<script src="../sizzle.js"> </script>
+</head>
+<body>
+    <div id="text">
+        <p>
+            <input type="text" />
+        </p>
+        <div class="aaron">
+            <input type="checkbox" name="readme" />
+            <p><span class="red">Sizzle</span></p>
+        </div>
+    </div>
+
+
+    
+</body>
+<script >
+    //Sizzle=jQuery.find
+    console.log( jQuery.tokenize('div > p + .aaron[type="checkbox"], #id:first-child')  )
+    </script>
+</html>

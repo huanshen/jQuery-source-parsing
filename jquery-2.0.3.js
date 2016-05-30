@@ -2495,24 +2495,50 @@ function setFilters() {}
 setFilters.prototype = Expr.filters = Expr.pseudos;
 Expr.setFilters = new setFilters();
 
+//假设传入进来的选择器是：div > p + .aaron[type="checkbox"], #id:first-child
+//这里可以分为两个规则：div > p + .aaron[type="checkbox"] 以及 #id:first-child
+//返回的需要是一个Token序列
+//Sizzle的Token格式如下 ：{value:'匹配到的字符串', type:'对应的Token类型', matches:'正则匹配到的一个结构'}
 function tokenize( selector, parseOnly ) {
 	var matched, match, tokens, type,
 		soFar, groups, preFilters,
 		cached = tokenCache[ selector + " " ];
+		
+		//这里的soFar是表示目前还未分析的字符串剩余部分
+  		//groups表示目前已经匹配到的规则组，在这个例子里边，groups的长度最后是2，存放的是每个规则对应的Token序列
 
+    //如果cache里边有，直接拿出来即可
 	if ( cached ) {
 		return parseOnly ? 0 : cached.slice( 0 );
 	}
-
+	//初始化
 	soFar = selector;
-	groups = [];
+	groups = [];//这是最后要返回的结果，一个二维数组
+
+	//比如"title,div > :nth-child(even)"解析下面的符号流
+    // [ [{value:"title",type:"TAG",matches:["title"]}],
+    //   [{value:"div",type:["TAG",matches:["div"]},
+    //    {value:">", type: ">"},
+    //    {value:":nth-child(even)",type:"CHILD",matches:["nth",
+    //     "child","even",2,0,undefined,undefined,undefined]}
+    //   ]
+    // ]
+    //有多少个并联选择器，里面就有多少个数组，数组里面是拥有value与type的对象
+
+
+	//这里的预处理器为了对匹配到的Token适当做一些调整
+    //自行查看源码，其实就是正则匹配到的内容的一个预处理
 	preFilters = Expr.preFilter;
 
+	//递归检测字符串
+    //比如"div > p + .aaron input[type="checkbox"]"
 	while ( soFar ) {
 
 		// Comma and first run
+		// 以第一个逗号切割选择符,然后去掉前面的部分
 		if ( !matched || (match = rcomma.exec( soFar )) ) {
 			if ( match ) {
+				//如果匹配到逗号,去掉前面的部分
 				// Don't consume trailing commas as valid
 				soFar = soFar.slice( match[0].length ) || soFar;
 			}
@@ -2941,22 +2967,39 @@ function multipleContexts( selector, contexts, results ) {
 	}
 	return results;
 }
-
+// Sizzle 引擎的主要入口函数
+// Expr.find: 主查找函数
+// Expr.filter: 主过滤函数
+// Expr.relative: 块间关系处理函数集
+// 程序走到这里调用了这个函数，说明选择器 selector 非简单的单条规则（如 id 、 tag 、class）
+// 且浏览器不支持 querySelectorAll 接口
 function select( selector, context, results, seed ) {
 	var i, tokens, token, type, find,
+		// tokenize 解析出词法格式
+		// tokenize 返回的是一个 Token 序列
 		match = tokenize( selector );
 
+	// 如果外界没有指定初始集合 seed
 	if ( !seed ) {
 		// Try to minimize operations if there is only one group
+		// 如果只有一组，就是在单个选择器的情况（即是没有逗号的选择器，并非单条规则）
+		// 可以有一些便捷的处理方式
 		if ( match.length === 1 ) {
 
 			// Take a shortcut and set the context if the root selector is an ID
 			tokens = match[0] = match[0].slice( 0 );
+			// 这么一大串其实简单来说是
+			// 其实 Sizzle 不完全是采用从右到左，如果选择器表达式的最左边存在 #id 选择器
+			// 就会首先对最左边进行查询，并将其作为下一步的执行上下文，
+			// 最终达到缩小上下文的目的，考虑的相当全面
 			if ( tokens.length > 2 && (token = tokens[0]).type === "ID" &&
 					support.getById && context.nodeType === 9 && documentIsHTML &&
 					Expr.relative[ tokens[1].type ] ) {
 
+				// 如果是 id 选择器，那么以 #id 作为新的上下文
 				context = ( Expr.find["ID"]( token.matches[0].replace(runescape, funescape), context ) || [] )[0];
+				// 如果 context 为空，说明新的上下文没找到
+				// 如果 context 这个元素（ selector 第一个 id 选择器）都不存在就不用继续查找
 				if ( !context ) {
 					return results;
 				}
@@ -2971,9 +3014,17 @@ function select( selector, context, results, seed ) {
 				// Abort if we hit a combinator
 				if ( Expr.relative[ (type = token.type) ] ) {
 					break;
+					// 先看看有没有搜索器find，搜索器就是浏览器一些原生的取DOM接口，简单的表述就是以下对象了
+					//  Expr.find = {
+					//    'ID'    : context.getElementById,
+					//    'CLASS' : context.getElementsByClassName,
+					//    'NAME'  : context.getElementsByName,
+					//    'TAG'   : context.getElementsByTagName
+					//  }
 				}
 				if ( (find = Expr.find[ type ]) ) {
 					// Search, expanding context for leading sibling combinators
+
 					if ( (seed = find(
 						token.matches[0].replace( runescape, funescape ),
 						rsibling.test( tokens[0].type ) && context.parentNode || context
@@ -2996,6 +3047,13 @@ function select( selector, context, results, seed ) {
 
 	// Compile and execute a filtering function
 	// Provide `match` to avoid retokenization if we modified the selector above
+	// tokenize(selector) 的结果不止一组，无法使用上述简便的方法
+	// 交由 compile 来生成一个称为终极匹配器
+	// 通过这个匹配器过滤 seed ，把符合条件的结果放到 results 里边
+	// 生成编译函数
+	// var superMatcher = compile( selector, match )
+	// 执行
+	// superMatcher(seed,context,!documentIsHTML,results,rsibling.test( selector ))
 	compile( selector, match )(
 		seed,
 		context,
