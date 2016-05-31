@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="../jquery-2.0.3.js"> </script>
+</head>
+<body>
+	<h1>jQuery 源码解读 by huanshen</h1>
+	<div></div>
+	<div></div>
+	<div id="one"></div>
+	<div></div>
+	<script >
+	var dom=document.getElementById("one");
+	console.log($("div").ownerDocument);//undefined
+	console.log(document.ownerDocument);//null
+	console.log(document.documentElement.ownerDocument);//document对象
+	console.log(document.body.ownerDocument);//document对象
+	console.log(dom.ownerDocument);//document对象
+	console.log(dom.nodeType);//1
+	console.log(window.document.nodeType);//9
+	console.log(window.document);//document对象
+	console.log(document.body.ownerDocument.defaultView);//window对象
+	console.log(dom.ownerDocument.defaultView);//window对象
+	console.log(dom.ownerDocument.documentElement);//<html><head><body>....是标签
+
+	var len=document.getElementsByTagName("div").length;
+	console.log(len);
+	console.log(!document.getElementById("one"))
+	console.log(typeof dom.getElementsByClassName);
+	</script>
+</body>
+</html>

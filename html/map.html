@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="../jquery-2.0.3.js"> </script>
+</head>
+<body>
+	<h1>jQuery 源码解读 by huanshen</h1>
+	<script >
+	var arr = []; 
+		arr[1] = 1;
+	var arr2=[1,2,3,4];
+	var obj={1:"name",2:"ar"};
+
+	var t=$.map(arr,function(value,key) {
+		return value*value;
+	});
+	console.log(t);
+
+	var t=$.map(arr2,function(value,key) {
+		return value*value;
+	});
+	console.log(t  +" "+ $.type(t));
+
+	var t=$.map(obj,function(value,key) {
+		return value+value;
+	});
+	console.log(t  +" "+ $.type(t) );
+	
+	</script>
+</body>
+</html>

@@ -7,13 +7,11 @@
 <body>
 	<h1>jQuery 源码解读 by huanshen</h1>
 	<script >
-	var arr="tttt";
-	var arr1=$.makeArray(arr,[1,0]);
-	console.log(arr1);
-
-	var arr="tttt";
-	var arr1=$.makeArray(arr,{1:0});
-	console.log(arr1);
+	var arr = []; 
+	arr[1] = 1;
+	var arr2=[1,2,3,4];
+	var t=$.merge(arr,arr2);
+	console.log(t);
 	</script>
 </body>
 </html>

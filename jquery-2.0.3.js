@@ -3171,9 +3171,13 @@ jQuery.contains = Sizzle.contains;
 
 })( window );
 // String to Object options format cache
+// 创建一个 options 缓存，用于 Callbacks
 var optionsCache = {};
 
 // Convert String-formatted options into Object-formatted ones and store in cache
+// 生成一个 options 配置对象
+// 使用 optionsCache[ options ] 缓存住配置对象
+// 生成的配置对象就是{once:true, memory:true}
 function createOptions( options ) {
 	var object = optionsCache[ options ] = {};
 	jQuery.each( options.match( core_rnotwhite ) || [], function( _, flag ) {
@@ -3204,32 +3208,61 @@ function createOptions( options ) {
  *	stopOnFalse:	interrupt callings when a callback returns false
  *
  */
+ // options 参数包含四个可选项，可用空格或者, 分隔，分别是
+// once 、 memory 、 unique 、stopOnFalse
+// once -- 确保这个回调列表只执行（ .fire() ）一次(像一个递延 Deferred)
+// memory -- 保持以前的值，将添加到这个列表的后面的最新的值立即执行调用任何回调 (像一个递延 Deferred)
+// unique -- 确保一次只能添加一个回调(所以在列表中没有重复的回调)
+// stopOnFalse -- 当一个回调返回 false 时中断调用
 jQuery.Callbacks = function( options ) {
 
 	// Convert options from String-formatted to Object-formatted if needed
 	// (we check in cache first)
+	// 通过字符串在optionsCache寻找有没有相应缓存，如果没有则创建一个，有则引用
 	options = typeof options === "string" ?
+		// 如果传递的是字符串
+		// 可以传递字符串："once memory"
+		// 这里还用optionsCache[ options ]缓存住配置对象
+		// 生成的配置对象就是{once:true, memory:true}
 		( optionsCache[ options ] || createOptions( options ) ) :
+		// 如果传递的是对象
+		// 可以传递对象：{once:true, memory:true}
 		jQuery.extend( {}, options );
 
 	var // Last fire value (for non-forgettable lists)
+		// 最后一次触发回调时传的参数
 		memory,
 		// Flag to know if list was already fired
+		// 列表中的函数是否已经回调至少一次
 		fired,
 		// Flag to know if list is currently firing
+		// 列表中的函数是否正在回调中
 		firing,
 		// First callback to fire (used internally by add and fireWith)
+		// 回调的起点
 		firingStart,
 		// End of the loop when firing
+		// 需要 fire 的队列长度
 		firingLength,
 		// Index of currently firing callback (modified by remove if needed)
+		// 当前正在firing的回调在队列的索引
 		firingIndex,
 		// Actual callback list
+		// 回调函数列表
 		list = [],
 		// Stack of fire calls for repeatable lists
+		// 可重复的回调函数堆栈，用于控制触发回调时的参数列表
+		// 如果不是once的，那么stack会keep住fire所需的上下文跟参数（假设称为事件）
 		stack = !options.once && [],
 		// Fire callbacks
+		// 触发回调函数列表
+		// 这个函数是内部使用的辅助函数，私有方法
+		// 它被 self.fire 以及 self.fireWith 调用
 		fire = function( data ) {
+			// 如果参数 memory 为true，则记录 data
+			// 如果是 memory 类型管理器
+			// 要记住 fire 的事件 data，以便下次 add 的时候可以重新 fire 这个事件
+			// 看 add 源码最后一段就知道
 			memory = options.memory && data;
 			fired = true;
 			firingIndex = firingStart || 0;
@@ -3237,66 +3270,116 @@ jQuery.Callbacks = function( options ) {
 			firingLength = list.length;
 			firing = true;
 			for ( ; list && firingIndex < firingLength; firingIndex++ ) {
+				// data[ 0 ]是函数执行的上下文，也就是平时的this
+				// 这里看再看下 self.fireWith 传过来的参数 args 的格式
+				// 如果是stopOnFalse管理器，并且回调返回值是false，中断！
+				// list[ firingIndex ].apply( data[ 0 ], data[ 1 ] ) 是最终的执行回调的方法
 				if ( list[ firingIndex ].apply( data[ 0 ], data[ 1 ] ) === false && options.stopOnFalse ) {
 					memory = false; // To prevent further calls using add
 					break;
 				}
 			}
+			// 结束 fire ，标记回调结束
 			firing = false;
 			if ( list ) {
 				if ( stack ) {
+					// 如果事件栈还不为空
+					// 不是 "once" 的情况
 					if ( stack.length ) {
+						// 从堆栈头部取出，递归fire
 						fire( stack.shift() );
+						//这里一直在自我调用，直到为空的时候，才会往下运行
+						// 这里是深度遍历，直到事件队列为空
 					}
+				// 深度遍历结束
+				// 等到fire完所有的事件后
+				// 如果是memory类型管理器，下次还能继续
 				} else if ( memory ) {
+					// 清空队列
+					// "once memory" ，或者 "memory" 情况下 lock 过。
 					list = [];
 				} else {
+					// once
 					self.disable();
 				}
 			}
 		},
 		// Actual Callbacks object
+		// 实际的 callbacks 对象
+		// var callbacks = $.Callbacks() 最后返回的是 sele 对象
 		self = {
 			// Add a callback or a collection of callbacks to the list
+			// 向回调列表中添加一个回调或回调的集合。
+			// 也就是实参可以是一个函数，或者一个函数数组
 			add: function() {
 				if ( list ) {
 					// First, we save the current length
+					// 首先，存储当前回调队列的长度
 					var start = list.length;
+					// 这里是一个立即执行函数，参数 add 是传入的参数
+					// 直接遍历传过来的 arguments 进行 push
 					(function add( args ) {
+						// 遍历这个 参数 集合
 						jQuery.each( args, function( _, arg ) {
 							var type = jQuery.type( arg );
+							// 如果传入的是单个方法
 							if ( type === "function" ) {
+								// 不是unique管理器或者当前队列还没有该回调
 								if ( !options.unique || !self.has( arg ) ) {
 									list.push( arg );
 								}
+							// 如果传入的是回调的集合数组 或者 array-like
+							// 因为可以同时add多个回调
+							// 从这里可以看出add的传参可以有add(fn),add([fn1,fn2]),add(fn1,fn2)
+							// 同时这里排除掉type为string的情况，其实是提高效率，
 							} else if ( arg && arg.length && type !== "string" ) {
 								// Inspect recursively
+								// 递归调用自己，注意这个使用技巧
+								// 如果是数组，以这个数组为参数再递归调用这个立即执行函数本身
 								add( arg );
 							}
 						});
 					})( arguments );
 					// Do we need to add the callbacks to the
 					// current firing batch?
+					// 如果当前在 firing 当中，那就把需要firing的长度设置成列表长度
 					if ( firing ) {
 						firingLength = list.length;
 					// With memory, if we're not firing then
 					// we should call right away
+					// 如果已经 fire 过并且是 memory 类型的管理器
+					// memory 在这里是上一次 fire 的 [context, args]
 					} else if ( memory ) {
 						firingStart = start;
+						// memory 在上一次 fire 的时候被记录过了
+						// fire 的时候有这么一段
+						// memory = options.memory && data;
+						// memory 作用在这里，没有fire，一样有结果
 						fire( memory );
 					}
 				}
 				return this;
 			},
 			// Remove a callback from the list
+			// 从队列中移除一个或多个回调
 			remove: function() {
+				// 确保队列是存在的
 				if ( list ) {
+					// 遍历传入的参数（即是要移除的回调）
 					jQuery.each( arguments, function( _, arg ) {
 						var index;
+						// inArray(elem,arr,i) -- 在数组中查找指定值并返回它的索引（如果没有找到，则返回-1）
+						// elem 规定需检索的值, arr 数组, i 可选的整数参数
 						while( ( index = jQuery.inArray( arg, list, index ) ) > -1 ) {
+							// splice(index,howmany) 方法向/从数组中添加/删除项目，然后返回被删除的项目
+							// index -- 必需。整数，规定添加/删除项目的位置
+							// howmany -- 必需。要删除的项目数量。如果设置为 0，则不会删除项目
+							// 从回调队列中移除当前查找到的这个方法
 							list.splice( index, 1 );
 							// Handle firing indexes
 							if ( firing ) {
+								// 在函数列表处于firing状态时，最主要的就是维护firingLength和firgingIndex这两个值
+								// 保证fire时函数列表中的函数能够被正确执行（fire中的for循环需要这两个值
 								if ( index <= firingLength ) {
 									firingLength--;
 								}
@@ -3311,25 +3394,31 @@ jQuery.Callbacks = function( options ) {
 			},
 			// Check if a given callback is in the list.
 			// If no argument is given, return whether or not list has callbacks attached.
+			// 查找一个给定的回调函数是否存在于回调列表中
 			has: function( fn ) {
 				return fn ? jQuery.inArray( fn, list ) > -1 : !!( list && list.length );
 			},
 			// Remove all callbacks from the list
+			// 清空回调列表
 			empty: function() {
 				list = [];
 				firingLength = 0;
 				return this;
 			},
 			// Have the list do nothing anymore
+			// 禁用回调列表中的回调
+			// 禁用掉之后，把里边的队列、栈等全部清空了！无法再恢复了
 			disable: function() {
 				list = stack = memory = undefined;
 				return this;
 			},
 			// Is it disabled?
+			// 列表是否被禁用，如果禁掉就是undefined，返回true
 			disabled: function() {
 				return !list;
 			},
 			// Lock the list in its current state
+			//memory是空的就禁掉，否则令stack = undefined;
 			lock: function() {
 				stack = undefined;
 				if ( !memory ) {
@@ -3338,17 +3427,27 @@ jQuery.Callbacks = function( options ) {
 				return this;
 			},
 			// Is it locked?
+			//判断是否锁住
 			locked: function() {
 				return !stack;
 			},
 			// Call all callbacks with the given context and arguments
+			// 以给定的上下文和参数调用所有回调函数
 			fireWith: function( context, args ) {
+				// list 不为空
+				// 并且没有 fire 过或者 stack 不为空
 				if ( list && ( !fired || stack ) ) {
 					args = args || [];
+					// 把 args 组织成 [context, [arg1, arg2, arg3, ...]]
+					// 可以看到第一个参数是上下文
 					args = [ context, args.slice ? args.slice() : args ];
+					// 如果当前还在 firing
 					if ( firing ) {
+						// 将参数推入堆栈，等待当前回调结束再调用
 						stack.push( args );
 					} else {
+						// 否则直接调用
+						// 这里调用的 fire 是内部使用的 fire 方法，不是self.fire
 						fire( args );
 					}
 				}
@@ -3356,11 +3455,15 @@ jQuery.Callbacks = function( options ) {
 			},
 			// Call all the callbacks with the given arguments
 			fire: function() {
+				// 以给定的参数调用所有回调函数
+				// 外观模式 self.fire –> self.fireWith –> fire
+				// 最终执行代码是内部私有的 fire 方法
 				self.fireWith( this, arguments );
 				return this;
 			},
 			// To know if the callbacks have already been called at least once
 			fired: function() {
+				// 回调函数列表是否至少被调用一次
 				return !!fired;
 			}
 		};
@@ -3369,90 +3472,179 @@ jQuery.Callbacks = function( options ) {
 };
 jQuery.extend({
 
+	// Deferred 方法
+	// 生成的 deferred 对象就是 jQuery 的回调函数解决方案
+	// $.Deferred() 生成一个 deferred 对象
+	// deferred.done(fnc) 指定操作成功时的回调函数
+	// deferred.fail(fnc) 指定操作失败时的回调函数
+	// deferred.promise() 没有参数时，返回一个新的deferred对象，该对象的运行状态无法被改变；接受参数时，作用为在参数对象上部署 deferred 接口
+	// deferred.resolve() 手动改变 deferred 对象的运行状态为"已完成"，从而立即触发 done() 方法
+	// deferred.reject() 这个方法与 deferred.resolve() 正好相反，调用后将 deferred 对象的运行状态变为"已失败"，从而立即触发 fail() 方法
+	// $.when() 为多个操作指定回调函数
+	// deferred.then() 便捷写法，把 done()、fail() 和 progress() 合在一起写
+	// deferred.always() 用来指定回调函数的，它的作用是，不管调用的是 deferred.resolve() 还是 deferred.reject()，最后总是执行
+	// deferred对象详解 http://www.ruanyifeng.com/blog/2011/08/a_detailed_explanation_of_jquery_deferred_object.html
 	Deferred: function( func ) {
+		// action, add listener, listener list, final state
+		// tuples 创建三个 $.Callbacks 对象，分别表示成功，失败，处理中三种状态
+		// 为什么要写成 tuples 这种格式呢，其实是把相同有共同特性的代码的给合并成一种结构，
+		// 然后下面通过 jQuery.each(tuples, function(i, tuple) {} 一次处理
+		// 三个队列，done|fail|progress 成功|失败|处理中
 		var tuples = [
-				// action, add listener, listener list, final state
+
+				// resolved 对应 已完成
+				// resolved 对象立刻调用 done()方法指定的回调函数
+				// rejected 对应 已失败
+				// rejected 对象立刻调用 fail()方法指定的回调函数
+				// notify 对应 处理中
+				// progress 对象立刻调用 progress()方法指定的回调函数
 				[ "resolve", "done", jQuery.Callbacks("once memory"), "resolved" ],
 				[ "reject", "fail", jQuery.Callbacks("once memory"), "rejected" ],
 				[ "notify", "progress", jQuery.Callbacks("memory") ]
 			],
+			// 初始状态 ，pending 的意思为待定
 			state = "pending",
+			// 定义一个 promise 对象，坑爹是这个对象里面还有一个 promise 对象需要注意
+			// 具有 state、always、then、primise 方法
 			promise = {
+				// 返回一个 Deferred 对象的当前状态
 				state: function() {
 					return state;
 				},
+				// 这个方法也是用来指定回调函数的
+				// 它的作用是，不管调用的是 deferred.resolve() 还是 deferred.reject() ，最后总是执行
 				always: function() {
+					// deferred 是最终生成的异步队列实例
 					deferred.done( arguments ).fail( arguments );
+					// 返回 this，便于链式操作
 					return this;
 				},
+				// 把 done()、fail() 和 progress() 合在一起写
+				// deferred.done(fnDone), fail(fnFail) , progress(fnProgress) 的快捷方式
 				then: function( /* fnDone, fnFail, fnProgress */ ) {
+					// 参数为传入的 done 、 fail 、progress 函数
+					// fns = [fnDone, fnFail, fnProgress]
 					var fns = arguments;
+					// 这里 return jQuery.Deferred(function( newDefer ) {}).promise();
+					// 这里可以看到，又使用了 jQuery.Deferred() 对 then 方法里面的参数又封装了一次
 					return jQuery.Deferred(function( newDefer ) {
+						// 遍历 tuples
 						jQuery.each( tuples, function( i, tuple ) {
+							// action 表示三种状态 resolve 、reject 、notify 其中之一
+							// 分别对应 fnDone, fnFail, fnProgress（首先用 isFunction 判断传入的参数是否是方法，注意 && 在这里的用法）
 							var action = tuple[ 0 ],
 								fn = jQuery.isFunction( fns[ i ] ) && fns[ i ];
 							// deferred[ done | fail | progress ] for forwarding actions to newDefer
+							// 绑定 deferred [done | fail | progress] 方法
 							deferred[ tuple[1] ](function() {
+								// 当前的 this == deferred
 								var returned = fn && fn.apply( this, arguments );
+								// 如果回调返回的是一个 Deferred 实例
 								if ( returned && jQuery.isFunction( returned.promise ) ) {
+									// 则继续派发事件
 									returned.promise()
 										.done( newDefer.resolve )
 										.fail( newDefer.reject )
 										.progress( newDefer.notify );
 								} else {
+									// 如果回调返回的是不是一个 Deferred 实例，则被当做 args 由 XXXWith 派发出去
 									newDefer[ action + "With" ]( this === promise ? newDefer.promise() : this, fn ? [ returned ] : arguments );
 								}
 							});
 						});
+						// 销毁变量，防止内存泄漏（退出前手工设置null避免闭包造成的内存占用）
 						fns = null;
 					}).promise();
 				},
 				// Get a promise for this deferred
 				// If obj is provided, the promise aspect is added to the object
 				promise: function( obj ) {
+					// 如果 obj 存在，给 obj 拓展 then | done | fail | progress 等方法，也就是外层的 promise 对象所定义的 state 、always 、then 方法
+					// 注意区分这里的 promise ，这里的 promise 指代的是外层的 promise 对象，而不是里层的 promise 方法
+					// 在这里的 promise 就相当于 this
 					return obj != null ? jQuery.extend( obj, promise ) : promise;
 				}
 			},
+			// 最终生成的异步队列实例
 			deferred = {};
 
 		// Keep pipe for back-compat
+		// 兼容旧版
 		promise.pipe = promise.then;
 
 		// Add list-specific methods
+		// 初始化三条 Callbacks 队列
+		// 对于 tuples 的 3 条数据集是分 2 部分处理的
+		// 1、将回调函数（ done | fail | progress ）存入函数
+		// 2、给 deferred 对象扩充6个方法 （resolve/reject/notify/resolveWith/rejectWith/notifyWith ）
+		// resolve/reject/notify 是 callbacks.fireWith ，执行回调函数
+		// resolveWith/rejectWith/notifyWith 是 callbacks.fireWith 队列方法引用
 		jQuery.each( tuples, function( i, tuple ) {
+			// list 为队列，jQuery.Callbacks() ,创建了一个 callback 对象
+			// stateString 为最后的状态
 			var list = tuple[ 2 ],
-				stateString = tuple[ 3 ];
+				stateString = tuple[ 3 ]; //不存在[3]的，相当于就是复制undefined
 
 			// promise[ done | fail | progress ] = list.add
+			// tuple[1] == done | fail | progress
+			// 可以看到 done|fail|progress 其实就是 Callbacks 里边的 add 方法
 			promise[ tuple[1] ] = list.add;
 
 			// Handle state
+			// 成功或者失败
+			// 如果存在 deferred 最终状态，向 doneList,failList 中的 list 添加 3 个回调函数
 			if ( stateString ) {
 				list.add(function() {
 					// state = [ resolved | rejected ]
+					// 修改最终状态
 					state = stateString;
 
 				// [ reject_list | resolve_list ].disable; progress_list.lock
-				}, tuples[ i ^ 1 ][ 2 ].disable, tuples[ 2 ][ 2 ].lock );
+				// 这里用到了 disable ，即是禁用回调列表中的回调
+				// 禁用对立的那条队列
+				// 注意 0^1 = 1   1^1 = 0
+				// 即是成功的时候，把失败那条队列禁用
+				// 即是成功的时候，把成功那条队列禁用
+				}, tuples[ i ^ 1 ][ 2 ].disable, 
+				// 锁住当前队列状态
+				tuples[ 2 ][ 2 ].lock );
 			}
 
 			// deferred[ resolve | reject | notify ]
+			// tuple[0] == resolve | reject | notify
+			// 可以看到 resolve | reject | notify 其实就是 Callbacks 里边的 fire 方法
+			// 这里还有一点，deferred 对象是暴露了 resolve | reject | notify 三个方法的，而 deferred.promise() 只暴露 done, fail, always 这些个回调函数接口
+			// 之所以通常使用 deferred 是要返回 deferred.promise() ，一是因为 CommonJS promise/A 本来就应当是这样子的；
+			//二也是用来避免返回的对象能够主动地调用到 resolve 与 reject 这些关键性的方法
 			deferred[ tuple[0] ] = function() {
 				deferred[ tuple[0] + "With" ]( this === deferred ? promise : this, arguments );
 				return this;
 			};
+			// deferred[resolveWith | rejectWith | notifyWith] 调用的是 Callbacks 里的 fireWith 方法
 			deferred[ tuple[0] + "With" ] = list.fireWith;
 		});
+		// 这一步之前 promise 和 deferred 绑定了以下方法
+		// deferred[ resolve | reject | notify ]
+		// deferred[ resolveWith | rejectWith | notifyWith ]
+		// promise[ done | fail | progress | then | always | state | promise ]
 
 		// Make the deferred a promise
+		// 合并内部辅助的 promise 的 promise 方法（jQ 同学坑爹，起同样名字）
+		// 扩展 deferred 的 then | done | fail | progress 等方法
 		promise.promise( deferred );
 
 		// Call given func if any
+		// $.Deferred(func)格式
+		// $.Deferred() 可以接受一个函数名（注意，是函数名）作为参数，$.Deferred() 所生成的 deferred 对象将作为这个函数的默认参数
+		// 例子:
+		// http://www.ruanyifeng.com/blog/2011/08/a_detailed_explanation_of_jquery_deferred_object.html
+		// 并且把当前任务的上下文跟参数设置成当前生成的deferred实例
 		if ( func ) {
 			func.call( deferred, deferred );
 		}
 
 		// All done!
+		// 返回实例，显而易见 Deferred 是个工厂类，返回的是内部构建的 deferred 对象
 		return deferred;
 	},
 

@@ -7,13 +7,13 @@
 <body>
 	<h1>jQuery 源码解读 by huanshen</h1>
 	<script >
-	var arr="tttt";
-	var arr1=$.makeArray(arr,[1,0]);
-	console.log(arr1);
 
-	var arr="tttt";
-	var arr1=$.makeArray(arr,{1:0});
-	console.log(arr1);
+	function arr(){
+		var t=[].slice.call(arguments);
+		console.log(t);//["err", "e123", "aaa"]
+		console.log(jQuery.type(t));//array
+	}
+	arr("err","e123","aaa");
 	</script>
 </body>
 </html>
