@@ -3470,6 +3470,11 @@ jQuery.Callbacks = function( options ) {
 
 	return self;
 };
+
+//jQuery.extend({ 
+   	// Deferred : function(){}    
+	//when : function()
+//)}其实是传入了一个对象，包含两个属性
 jQuery.extend({
 
 	// Deferred 方法
@@ -3530,6 +3535,7 @@ jQuery.extend({
 					return jQuery.Deferred(function( newDefer ) {
 						// 遍历 tuples
 						jQuery.each( tuples, function( i, tuple ) {
+							//注意不要把tuple和tuples搞混了
 							// action 表示三种状态 resolve 、reject 、notify 其中之一
 							// 分别对应 fnDone, fnFail, fnProgress（首先用 isFunction 判断传入的参数是否是方法，注意 && 在这里的用法）
 							var action = tuple[ 0 ],
@@ -3649,25 +3655,45 @@ jQuery.extend({
 	},
 
 	// Deferred helper
+	// Deferred helper
+	// $.when( deferreds ) 提供一种方法来执行一个或多个对象的回调函数，
+	// http://www.css88.com/jqapi-1.9/jQuery.when/
+	// 参数 deferreds 表示一个或多个延迟对象，或者普通的JavaScript对象
+	// 例子:
+	// http://www.ruanyifeng.com/blog/2011/08/a_detailed_explanation_of_jquery_deferred_object.html
+	// 注意到 $.when 是多任务的，当一个任务失败的时候，代表整个都失败了，
+	// 即是 $.when(d1, d2).done(fnc) 如果 d1 或者 d2 其中一个失败了，代表整个都失败了，将不会执行fnc
+	// 任务是 Deferred 实例，称为异步任务
+	// 任务是普通 function 时，称为同步任务
 	when: function( subordinate /* , ..., subordinateN */ ) {
 		var i = 0,
+			// 将传入的任务对象变为任务对象数组
 			resolveValues = core_slice.call( arguments ),
+			// 任务对象数组的长度
 			length = resolveValues.length,
 
 			// the count of uncompleted subordinates
 			remaining = length !== 1 || ( subordinate && jQuery.isFunction( subordinate.promise ) ) ? length : 0,
 
 			// the master Deferred. If resolveValues consist of only a single Deferred, just use that.
+			// 如果任务对象参数列表 resolveValues 只有一个对象，那么 deferred 对象就是它，否则新建一个 deferred 对象
 			deferred = remaining === 1 ? subordinate : jQuery.Deferred(),
 
 			// Update function for both resolve and progress values
+			// 用于更新 成功|处理 中两个状态，
+			// 这里不考虑失败的状态是因为，当一个任务失败的时候，代表整个都失败了。
 			updateFunc = function( i, contexts, values ) {
 				return function( value ) {
 					contexts[ i ] = this;
 					values[ i ] = arguments.length > 1 ? core_slice.call( arguments ) : value;
+					// 处理中，派发正在处理事件
 					if( values === progressValues ) {
 						deferred.notifyWith( contexts, values );
+						// 成功，并且最后剩余的异步任务为0了
+						//注意前面有一个叹号
 					} else if ( !( --remaining ) ) {
+						// 说明所有任务都成功了，派发成功事件出去
+						// 事件包含的上下文是当前任务前边的所有任务的一个集合
 						deferred.resolveWith( contexts, values );
 					}
 				};
@@ -3676,6 +3702,8 @@ jQuery.extend({
 			progressValues, progressContexts, resolveContexts;
 
 		// add listeners to Deferred subordinates; treat others as resolved
+		// 如果只有一个任务，可以不用做维护状态的处理了
+		// 只有大于1个任务才需要维护任务的状态
 		if ( length > 1 ) {
 			progressValues = new Array( length );
 			progressContexts = new Array( length );
@@ -3693,14 +3721,22 @@ jQuery.extend({
 		}
 
 		// if we're not waiting on anything, resolve the master
+		// 传进来的任务都是同步任务
 		if ( !remaining ) {
 			deferred.resolveWith( resolveContexts, resolveValues );
 		}
-
+		// 注意这里有一种情况是，
+		// 如果你不传递任何参数，jQuery.when() 将返回一个 resolved（解决）状态的 promise 对象
 		return deferred.promise();
 	}
 });
+// jQuery.support 属性包含表示不同浏览器特性或漏洞的属性集
+// 需要注意的是，官网强烈建议浏览器功能性检测不要使用 jQuery.support 上的属性。而使用比如 Modernizr 这样的外部类库（http://www.css88.com/jqapi-1.9/jQuery.support/）
+// example:
+// $.support.ajax --> true
 jQuery.support = (function( support ) {
+
+	// 创建测试用例
 	var input = document.createElement("input"),
 		fragment = document.createDocumentFragment(),
 		div = document.createElement("div"),
@@ -3708,6 +3744,7 @@ jQuery.support = (function( support ) {
 		opt = select.appendChild( document.createElement("option") );
 
 	// Finish early in limited environments
+	// 在非浏览器环境提前结束
 	if ( !input.type ) {
 		return support;
 	}
@@ -3781,17 +3818,27 @@ jQuery.support = (function( support ) {
 		body.appendChild( container ).appendChild( div );
 		div.innerHTML = "";
 		// Support: Firefox, Android 2.3 (Prefixed box-sizing versions).
+		// 注意这里设置了一些样式 box-sizing:border-box;padding:1px;border:1px;display:block;width:4px;
+		// border-box -- 这是IE 怪异模式（Quirks mode）使用的 盒模型。
+		// width 与 height 包括内边距（padding）与边框（border），不包括外边距（margin）
+		// width = border + padding + 内容的宽度，height = border + padding + 内容的高度
 		div.style.cssText = "-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;padding:1px;border:1px;display:block;width:4px;margin-top:1%;position:absolute;top:1%";
 
 		// Workaround failing boxSizing test due to offsetWidth returning wrong value
 		// with some non-1 values of body zoom, ticket #13543
+		// 当 offsetWidth 为 4 ，说明不包括内边距（padding）与边框（border），不支持 boxSizing
 		jQuery.swap( body, body.style.zoom != null ? { zoom: 1 } : {}, function() {
 			support.boxSizing = div.offsetWidth === 4;
 		});
 
 		// Use window.getComputedStyle because jsdom on node.js will break without it.
+		// window.getComputedStyle -- 方法得出所有在应用有效的样式和分解任何可能会包含值的基础计算后的元素的CSS属性值
+		// jQuery 的 CSS() 方法，其底层运作就应用了 getComputedStyle 以及 getPropertyValue 方法
+		// https://developer.mozilla.org/zh-CN/docs/Web/API/Window/getComputedStyle
 		if ( window.getComputedStyle ) {
 			support.pixelPosition = ( window.getComputedStyle( div, null ) || {} ).top !== "1%";
+			// safari 下返回 1%，因此等于 false ，而其他浏览器会转换成相应的像素值
+			//{ width: "4px" }是为了预防getComputedStyle失效嘛？
 			support.boxSizingReliable = ( window.getComputedStyle( div, null ) || { width: "4px" } ).width === "4px";
 
 			// Support: Android 2.3
@@ -3802,7 +3849,9 @@ jQuery.support = (function( support ) {
 			marginDiv.style.cssText = div.style.cssText = divReset;
 			marginDiv.style.marginRight = marginDiv.style.width = "0";
 			div.style.width = "1px";
-
+			// 检查 Margin Right 的计算是否可靠。 各浏览器中都为 true
+			// 上面注释中提到某些老版本的 Webkit 内核的浏览器中为 false
+			// 简单地说，就是将 width 和 marginRight 设为 0 时，获取的 marginRignt 应为 0
 			support.reliableMarginRight =
 				!parseFloat( ( window.getComputedStyle( marginDiv, null ) || {} ).marginRight );
 		}
@@ -3824,8 +3873,14 @@ jQuery.support = (function( support ) {
 	5. Avoid exposing implementation details on user objects (eg. expando properties)
 	6. Provide a clear path for implementation upgrade to WeakMap in 2014
 */
+// 下面一块是数据的存储
+// $.data() , $().data()
+// $.removeData() , $().removeData() 等
+
+// 匹配 {任意字符*} 或者 [任意字符*] 也就是数组和对象
 var data_user, data_priv,
 	rbrace = /(?:\{[\s\S]*\}|\[[\s\S]*\])$/,
+	// 匹配大写字母
 	rmultiDash = /([A-Z])/g;
 
 function Data() {
@@ -3850,6 +3905,7 @@ Data.accepts = function( owner ) {
 	//    - Node.DOCUMENT_NODE
 	//  - Object
 	//    - Any
+	//对于有节点的只要元素和document
 	return owner.nodeType ?
 		owner.nodeType === 1 || owner.nodeType === 9 : true;
 };

@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="../jquery-2.0.3.js"> </script>
+</head>
+<body>
+<h1>jQuery 源码解读 by huanshen</h1>
+	<script >
+	
+	function Aaron(List, callback) {
+
+		(function() {
+	    //这里使用了一个匿名函数，使得List的值得以保留
+		    var task = List.shift();
+		    task(); //执行函数
+		    if (List.length > 0) {  //递归分解
+	      	//arguments.callee继续调用该匿名函数
+	        setTimeout(arguments.callee, 1000)
+	      	} else {
+	        	callback()
+	      	}
+	    })();
+  	}
+
+  	Aaron([function(){
+    	    alert('a')
+  		},
+  		function(){
+    		alert('b')
+  		}],
+  		function(){
+    		alert('callback')
+  	})//分别弹出 ‘a’ , ‘b’ ,’callback’
+
+
+//Query提供的方式
+	var callbacks = $.Callbacks();
+
+	  callbacks.add(function() {
+	    alert('c');
+	  })
+
+	  callbacks.add(function() {
+	    alert('d');
+	  })
+
+	  callbacks.fire(); //输出结果: 'c' 'd'
+
+//once的用法
+	var callbacks = $.Callbacks('once');
+
+	  callbacks.add(function() {
+	    alert('e');
+	  })
+
+	  callbacks.add(function() {
+	    alert('f');
+	  })
+
+	  callbacks.fire(); //输出结果: 'e' 'f'
+	  callbacks.fire(); //未执行
+
+	</script>
+</body>
+</html>
