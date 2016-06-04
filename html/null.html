@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="../jquery-2.0.3.js"> </script>
+</head>
+<body>
+	<div id="one" value="4" class="1 huanshen  huansky">huanshen is a beginer<div>
+	<script >
+	
+	$("#one").removeClass("");//此时proceed ="",直接返回，不修改
+	console.log( $('#one').attr('class') );//1 huanshen  huansky
+	$("#one").removeClass();
+	console.log( $('#one').attr('class') );//
+
+	var t=null ? 1 : 0;
+	console.log(t);//0
+
+	var t=" " ? 1 : 0;
+	console.log(t);//1
+
+	var t="" ? 1 : 0;
+	console.log(t);//0
+
+	function sum(){
+		console.log(arguments.length);
+	};
+	sum("");//1
+	sum(" ");
+	</script>
+</body>
+</html>

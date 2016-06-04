@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="../jquery-2.0.3.js"> </script>
+</head>
+<body>
+	<div id="one" value="4" class="1 huanshen  huansky">huanshen is a beginer<div>
+	<script >
+	//true 添加 false 移除
+	$("#one").toggleClass("huan");
+	console.log( $('#one').attr('class') );
+
+	$("#one").toggleClass("huan",true);
+	console.log( $('#one').attr('class') );
+
+	$("#one").toggleClass("huan",false);
+	console.log( $('#one').attr('class') );
+
+	$("#one").toggleClass("huansky",true);
+	console.log( $('#one').attr('class') );
+
+	$("#one").toggleClass("huansky",false);
+	console.log( $('#one').attr('class') );
+
+	$("#one").toggleClass(false);
+	console.log( $('#one').attr('class') );
+	//传入false，并不是真正意义的上的移除，移走的同时还存储了
+	$("#one").toggleClass(true);
+	console.log( $('#one').attr('class') );
+
+	//传入字符串的时候，有则移除，没有添加
+	$("#one").toggleClass("1");
+	console.log( $('#one').attr('class') );
+
+	$("#one").toggleClass("2");
+	console.log( $('#one').attr('class') );
+
+	$("#one").removeClass("");
+	console.log( $('#one').attr('class') );
+	$("#one").removeClass();
+	console.log( $('#one').attr('class') );
+	var t=null ? 1 : 0;
+	console.log(t);//0
+
+	var t=" " ? 1 : 0;
+	console.log(t);//1
+
+	var t="" ? 1 : 0;
+	console.log(t);//0
+
+	function sum(){
+		console.log(arguments.length);
+	};
+	sum("");
+	</script>
+</body>
+</html>

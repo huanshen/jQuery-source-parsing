@@ -5,12 +5,10 @@
 <script src="../jquery-2.0.3.js"> </script>
 </head>
 <body>
+	<div id="one" value="4">ttt<div>
 	<script >
-	var arr = []; 
-	arr[1] = 1;
-	var arr2=[1,2,3,4];
-	var t=$.merge(arr,arr2);
-	console.log(t);
+	console.log($("#one").nodeType);
+	//$("#one").valHooks.attr()
 	</script>
 </body>
 </html>

@@ -6,7 +6,6 @@
 <script src="../sizzle.js"> </script>
 </head>
 <body>
-    <h1>jQuery 源码解读 by huanshen</h1>
 </body>
 <script >
     var tt={name:1,age:2};
@@ -18,5 +17,24 @@
     var y=jQuery.extend( tt, ["options",5454] );
     console.log(y);
     console.log(tt);
+
+    var obj1={
+        one:{
+            two:{
+                three:function(){
+                    return "three";
+                }
+            },
+            two2:{
+                three3:function(){
+                    console.log("three3")
+                }
+            }
+        }
+    }
+    var y=jQuery.extend( {}, obj1 );
+    console.log(y);
+    console.log(obj1);
+    console.log(obj1.one.two.three())
     </script>
 </html>

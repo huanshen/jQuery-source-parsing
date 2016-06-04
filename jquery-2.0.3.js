@@ -980,8 +980,10 @@ jQuery.extend({
 			bulk = key == null;
 
 		// Sets many values
+		//传递是对象
 		if ( jQuery.type( key ) === "object" ) {
 			chainable = true;
+			//i变成key,key[i]变成value
 			for ( i in key ) {
 				jQuery.access( elems, fn, i, key[i], true, emptyGet, raw );
 			}
@@ -4370,101 +4372,132 @@ jQuery.fn.extend({
 		return defer.promise( obj );
 	}
 });
+// 下面一块是关于 DOM元素 属性的操作 -- attr() 、prop() 、 val() 等
 var nodeHook, boolHook,
+	// \t -- 制表符，Tab
+	// \r -- 回车符
+	// \n -- 换行符
+	// \f -- 换页符
 	rclass = /[\t\r\n\f]/g,
+	// \r -- 回车符   匹配单个回车
 	rreturn = /\r/g,
+	// 匹配一些 input 结构
 	rfocusable = /^(?:input|select|textarea|button)$/i;
 
+//这是在原型上进行扩展
 jQuery.fn.extend({
+	// 获取匹配的元素集合中的第一个元素的属性的值，或设置每一个匹配元素的一个或多个属性
+	// 调用了 jQuery.access 方法实现
 	attr: function( name, value ) {
 		return jQuery.access( this, jQuery.attr, name, value, arguments.length > 1 );
 	},
-
+	// 清除某个属性（可批量） 注意each
 	removeAttr: function( name ) {
 		return this.each(function() {
 			jQuery.removeAttr( this, name );
 		});
 	},
-
+	// .prop() 方法只获得第一个匹配元素的属性值
+	// 如果元素上没有该属性，或者如果没有匹配的元素。那么该方法会返回 undefined 值
+	// 与 $.attr() 的区别
+	// 具有 true 和 false 两个属性的属性，如 checked, selected 或者 disabled 使用 prop()，其他的使用 attr()
 	prop: function( name, value ) {
 		return jQuery.access( this, jQuery.prop, name, value, arguments.length > 1 );
 	},
-
+	// 为集合中匹配的元素删除一个属性   注意each
 	removeProp: function( name ) {
 		return this.each(function() {
 			delete this[ jQuery.propFix[ name ] || name ];
 		});
 	},
-
+	// 向被选元素添加一个或多个类
 	addClass: function( value ) {
 		var classes, elem, cur, clazz, j,
 			i = 0,
 			len = this.length,
+			// 检测value是否为字符串
 			proceed = typeof value === "string" && value;
-
+		// 如果 value 是函数
 		if ( jQuery.isFunction( value ) ) {
 			return this.each(function( j ) {
+				// 那么逐个遍历现有元素，递归addClass方法
 				jQuery( this ).addClass( value.call( this, j, this.className ) );
 			});
 		}
-
+		// 传入的是字符串
 		if ( proceed ) {
 			// The disjunction here is for better compressibility (see removeClass)
+			// core_rnotwhite = /\S+/g ，匹配任意不是空白符的字符串
+			// 将 value 用空格分开成一个数组，相当于 classes = (value || "").split("/\s+/")
 			classes = ( value || "" ).match( core_rnotwhite ) || [];
 
 			for ( ; i < len; i++ ) {
 				elem = this[ i ];
 				cur = elem.nodeType === 1 && ( elem.className ?
+					// rclass = /[\t\r\n\f]/g
+					// 去掉换行换页什么的，两边加上空格，防止出错
 					( " " + elem.className + " " ).replace( rclass, " " ) :
+					// 如果没有class的话，那就等于一个空格
 					" "
 				);
 
 				if ( cur ) {
 					j = 0;
+					// 遍历所有的classes
 					while ( (clazz = classes[j++]) ) {
+						// 当前元素没有要添加的 Class，才加入
 						if ( cur.indexOf( " " + clazz + " " ) < 0 ) {
 							cur += clazz + " ";
 						}
 					}
+					// 设置 className，去掉首尾空格
 					elem.className = jQuery.trim( cur );
 
 				}
 			}
 		}
-
+		// 返回 this，支持链式操作
 		return this;
 	},
 
+	// 移除当前元素集合指定 Class
 	removeClass: function( value ) {
 		var classes, elem, cur, clazz, j,
 			i = 0,
 			len = this.length,
 			proceed = arguments.length === 0 || typeof value === "string" && value;
-
+		// 传入的如果是方法，遍历移除
 		if ( jQuery.isFunction( value ) ) {
 			return this.each(function( j ) {
 				jQuery( this ).removeClass( value.call( this, j, this.className ) );
 			});
 		}
+		// 传入的是字符串，传入""的时候，直接返回
 		if ( proceed ) {
+			// core_rnotwhite = /\S+/g ，匹配任意不是空白符的字符串
+			// 将 value 用空格分开成一个数组，相当于 classes = (value || "").split("/\s+/")
 			classes = ( value || "" ).match( core_rnotwhite ) || [];
 
 			for ( ; i < len; i++ ) {
 				elem = this[ i ];
 				// This expression is here for better compressibility (see addClass)
+				// 检测是否为 HTMLElement
 				cur = elem.nodeType === 1 && ( elem.className ?
+					// 去掉换行换页什么的，两边加上空格，防止出错
 					( " " + elem.className + " " ).replace( rclass, " " ) :
 					""
 				);
-
+				// cur 不为空
 				if ( cur ) {
 					j = 0;
 					while ( (clazz = classes[j++]) ) {
 						// Remove *all* instances
+						// 遍历 classes ，如果有则删除
 						while ( cur.indexOf( " " + clazz + " " ) >= 0 ) {
 							cur = cur.replace( " " + clazz + " ", " " );
 						}
 					}
+					// 重置 className
 					elem.className = value ? jQuery.trim( cur ) : "";
 				}
 			}
@@ -4473,37 +4506,55 @@ jQuery.fn.extend({
 		return this;
 	},
 
+	// 设置或移除被选元素的一个或多个类进行切换
+    // 该方法检查每个元素中指定的类。如果不存在则添加类，如果已设置则删除之。这就是所谓的切换效果。
+    // @param value String:类名  Function:规定返回需要添加或删除的一个或多个类名的函数 $(selector).toggleClass(function(index,class,switch),switch)
+    // @param stateVal 规定是否添加 (true) 或移除 (false) 类为 true 不存在,则添加。为 false ,已存在则删除
+    // @returns {*}
 	toggleClass: function( value, stateVal ) {
+		// 传入类名类型
 		var type = typeof value;
 
 		if ( typeof stateVal === "boolean" && type === "string" ) {
+
+		// 规定是否添加 (true) 或移除 (false) 类为 true 不存在,则添加。为 false ,已存在则删除
 			return stateVal ? this.addClass( value ) : this.removeClass( value );
 		}
 
+		// 如果 value 的类型是 function
 		if ( jQuery.isFunction( value ) ) {
 			return this.each(function( i ) {
 				jQuery( this ).toggleClass( value.call(this, i, this.className, stateVal), stateVal );
 			});
 		}
 
+		// 遍历 this 元素合集
 		return this.each(function() {
 			if ( type === "string" ) {
 				// toggle individual class names
 				var className,
 					i = 0,
 					self = jQuery( this ),
+
+					// core_rnotwhite = /\S+/g ，匹配任意不是空白符的字符串
+					// 将 value 用空格分开成一个数组，相当于 classes = (value || "").split("/\s+/")
 					classNames = value.match( core_rnotwhite ) || [];
 
+				//循环方法值得一学
 				while ( (className = classNames[ i++ ]) ) {
 					// check each className given, space separated list
+					// 查询是否已经有当前遍历到的这个 Class，有则删除，
 					if ( self.hasClass( className ) ) {
 						self.removeClass( className );
 					} else {
+						// 反之添加
 						self.addClass( className );
 					}
 				}
 
 			// Toggle whole class name
+			// 如果只传入了第二个参数 || 或者value是false
+            // 则对整个 class 字符串执行设置和取消
 			} else if ( type === core_strundefined || type === "boolean" ) {
 				if ( this.className ) {
 					// store className if set
@@ -4519,23 +4570,32 @@ jQuery.fn.extend({
 		});
 	},
 
+	// 在元素的 class 属性上是否存在指定的 selector
+	// 由于可能是在元素的集合上查找，有一项存在就返回 true,否则就返回 false
 	hasClass: function( selector ) {
+		// 传入的 selector 首尾添加空格
 		var className = " " + selector + " ",
 			i = 0,
 			l = this.length;
+		// 遍历元素的合集
 		for ( ; i < l; i++ ) {
+			// 首先确保 this 是 Element 元素
+			// 并且 selector 存在于 this 的 ClassName 中
 			if ( this[i].nodeType === 1 && (" " + this[i].className + " ").replace(rclass, " ").indexOf( className ) >= 0 ) {
 				return true;
 			}
 		}
-
+		// 否则返回 false
 		return false;
 	},
-
+	// 获取匹配的元素集合中第一个元素的当前值
+				// 或设置匹配的元素集合中每个元素的值
+				// val 方法主要做的就是对于 option 和 select 的兼容性的处理，
+				// 正常情况下直接取 Element.vlaue 进行操作，亮点依旧在钩子技术和参数重载上
 	val: function( value ) {
 		var hooks, ret, isFunction,
 			elem = this[0];
-
+		// 如果没有传入参数
 		if ( !arguments.length ) {
 			if ( elem ) {
 				hooks = jQuery.valHooks[ elem.type ] || jQuery.valHooks[ elem.nodeName.toLowerCase() ];
@@ -4548,6 +4608,7 @@ jQuery.fn.extend({
 
 				return typeof ret === "string" ?
 					// handle most common string cases
+					//rreturn检测回车符
 					ret.replace(rreturn, "") :
 					// handle cases where value is null/undef or number
 					ret == null ? "" : ret;
@@ -4555,7 +4616,7 @@ jQuery.fn.extend({
 
 			return;
 		}
-
+		// 判断 value 是否是函数
 		isFunction = jQuery.isFunction( value );
 
 		return this.each(function( i ) {
@@ -4592,9 +4653,15 @@ jQuery.fn.extend({
 	}
 });
 
+//这些方法是加在jQuery上的
 jQuery.extend({
+	// 定义一些钩子函数，用于处理一些特殊情况，避免在函数中使用大量的 else if
+	// val钩子
 	valHooks: {
 		option: {
+			// 当你获取 option 元素的 value 属性值时，
+			// 如果没有对此 option 显式设置 value 值，获取到的值是 option 的 text ，也就是 option 的文本
+			// 但是 IE6-7 下获取到的值是""
 			get: function( elem ) {
 				// attributes.value is undefined in Blackberry 4.7 but
 				// uses .value. See #6932
@@ -4602,12 +4669,17 @@ jQuery.extend({
 				return !val || val.specified ? elem.value : elem.text;
 			}
 		},
+		// 当 select 是单选时，获取的 value 值，就是你选择的那个 option 的值，
+		// 如果是多选，获取值时，就是你选择的所有 option 的值的数组形式
 		select: {
 			get: function( elem ) {
 				var value, option,
+					// select 的所有 option 的集合
 					options = elem.options,
+					// 当前选择的 option 的索引值
 					index = elem.selectedIndex,
 					one = elem.type === "select-one" || index < 0,
+					// 如果是单选框，values 为 null，如果是多选，values = []
 					values = one ? null : [],
 					max = one ? index + 1 : options.length,
 					i = index < 0 ?
@@ -4615,13 +4687,21 @@ jQuery.extend({
 						one ? index : 0;
 
 				// Loop through all the selected options
+				// 循环所有 options 选项
+				// 单选，循环一次，多选，循环多次
 				for ( ; i < max; i++ ) {
+					// 拿到当前循环到的项
 					option = options[ i ];
 
 					// IE6-9 doesn't update selected after form reset (#2551)
+					// IE6-9 下，点击 reset 按钮时，option 的 selected 不会恢复默认值
+					// 其他浏览器会恢复所有 option 的 selected 的默认值
 					if ( ( option.selected || i === index ) &&
 							// Don't return options that are disabled or in a disabled optgroup
+							// jQuery.support.optDisabled --
+							// 如果 option 被设置了 disabled，那么获取 option 的值时，是获取不到的
 							( jQuery.support.optDisabled ? !option.disabled : option.getAttribute("disabled") === null ) &&
+							// 如果 option 的父元素被设置了 disabled，并且父元素是 optgroup，那么也获取不到
 							( !option.parentNode.disabled || !jQuery.nodeName( option.parentNode, "optgroup" ) ) ) {
 
 						// Get the specific value for the option
@@ -4643,10 +4723,13 @@ jQuery.extend({
 			set: function( elem, value ) {
 				var optionSet, option,
 					options = elem.options,
+					// 把 value 转换成数组
 					values = jQuery.makeArray( value ),
 					i = options.length;
 
 				while ( i-- ) {
+					// 判断 select 的子元素 option 的 value 是否在 values 数组中，
+					// 如果在，就会把这个 option 选中
 					option = options[ i ];
 					if ( (option.selected = jQuery.inArray( jQuery(option).val(), values ) >= 0) ) {
 						optionSet = true;
@@ -4654,6 +4737,8 @@ jQuery.extend({
 				}
 
 				// force browsers to behave consistently when non-matching value is set
+				// 如果 select 下的 option 的 value 值没有一个等于 value 的
+				// 那么就让 select 的选择索引值赋为 -1，让 select 框中没有任何值
 				if ( !optionSet ) {
 					elem.selectedIndex = -1;
 				}
@@ -4661,17 +4746,19 @@ jQuery.extend({
 			}
 		}
 	},
-
+	// 设置或获取HTML属性
 	attr: function( elem, name, value ) {
 		var hooks, ret,
-			nType = elem.nodeType;
+			nType = elem.nodeType;//获取节点的类型
 
 		// don't get/set attributes on text, comment and attribute nodes
+		//未定义elem,除去文本节点3，注释8，属性2
 		if ( !elem || nType === 3 || nType === 8 || nType === 2 ) {
 			return;
 		}
 
 		// Fallback to prop when attributes are not supported
+		//不支持getAttribute的话，就采用prop方法
 		if ( typeof elem.getAttribute === core_strundefined ) {
 			return jQuery.prop( elem, name, value );
 		}
@@ -4683,27 +4770,33 @@ jQuery.extend({
 			hooks = jQuery.attrHooks[ name ] ||
 				( jQuery.expr.match.bool.test( name ) ? boolHook : nodeHook );
 		}
-
+		 
 		if ( value !== undefined ) {
-
+			// value为null，则移除name属性
+			 // 注意这里用的都是恒等号
 			if ( value === null ) {
 				jQuery.removeAttr( elem, name );
 
+			 // 属性钩子、布尔钩子、表单钩子，如果有对应的钩子，则调用钩子的set方法
 			} else if ( hooks && "set" in hooks && (ret = hooks.set( elem, value, name )) !== undefined ) {
 				return ret;
 
 			} else {
+				// 最后的最后，还是调用setAttribute，前边的各种钩子，都是修正属性
+           		// 强制将value转换为字符串
 				elem.setAttribute( name, value + "" );
 				return value;
 			}
-
+		 // 如果value是undefined，说明是取属性值，如果对应的钩子的有get方法，则调用钩子的get方法
 		} else if ( hooks && "get" in hooks && (ret = hooks.get( elem, name )) !== null ) {
 			return ret;
 
 		} else {
+			// 最后的最后：采用find.attr
 			ret = jQuery.find.attr( elem, name );
 
 			// Non-existent attributes return null, we normalize to undefined
+			// 不存在的属性返回null，格式化为undefined
 			return ret == null ?
 				undefined :
 				ret;
@@ -4729,9 +4822,12 @@ jQuery.extend({
 			}
 		}
 	},
-
+	// 意思就是在使用attr('type',??)设置的时候就会调用这个 hooks，
+	// 用于处理 IE6-9 input 属性不可写入的问题
+	// 实现 attr 属性处理相关特殊情况
 	attrHooks: {
 		type: {
+			// 用于处理 IE6-9 input 属性不可写入的问题
 			set: function( elem, value ) {
 				if ( !jQuery.support.radioValue && value === "radio" && jQuery.nodeName(elem, "input") ) {
 					// Setting the type on a radio button after the value resets the value in IE6-9
@@ -4746,16 +4842,20 @@ jQuery.extend({
 			}
 		}
 	},
-
+	//保留值属性名字修正
+	//htmlFor用于读取label标签的for属性
+	//className是W3C DOM标准，仍然是兼容性最强的解决办法。
 	propFix: {
 		"for": "htmlFor",
 		"class": "className"
 	},
 
+	// 设置或获取DOM属性
+	// $().prop() 方法的钩子
 	prop: function( elem, name, value ) {
 		var ret, hooks, notxml,
 			nType = elem.nodeType;
-
+		 // 忽略文本、注释、属性节点
 		// don't get/set properties on text, comment and attribute nodes
 		if ( !elem || nType === 3 || nType === 8 || nType === 2 ) {
 			return;
@@ -4765,12 +4865,14 @@ jQuery.extend({
 
 		if ( notxml ) {
 			// Fix name and attach hooks
+			  // 属性名name修正
 			name = jQuery.propFix[ name ] || name;
 			hooks = jQuery.propHooks[ name ];
 		}
-
+		 // 如果钩子存在set方法，则调用钩子的set方法
 		if ( value !== undefined ) {
 			return hooks && "set" in hooks && (ret = hooks.set( elem, value, name )) !== undefined ?
+				//不同于前面使用if else，这里采用三元运算符
 				ret :
 				( elem[ name ] = value );
 
@@ -4839,7 +4941,21 @@ if ( !jQuery.support.optSelected ) {
 		}
 	};
 }
+/*
+*tabIndex 属性可设置或返回按钮的 tab 键控制次序
+*readonly 属性规定输入字段为只读。
+*maxlength 属性规定输入字段的最大长度，以字符个数计。
+*cellspacing 属性规定单元格之间的空间
+*cellpadding 属性规定单元边沿与其内容之间的空白。
+*rowspan 属性规定单元格可横跨的行数。
+*colspan 属性规定单元格可横跨的列数。
 
+*HTML <img> 标签的
+*usemap 属性将图像定义为客户端图像映射
+*frameBorder 属性设置或返回是否显示框架周围的边框。
+*contenteditable 属性规定是否可编辑元素的内容。
+*/
+//key值转化为小写，value保存正确写法
 jQuery.each([
 	"tabIndex",
 	"readOnly",
@@ -4895,6 +5011,7 @@ function safeActiveElement() {
  * Helper functions for managing events -- not part of the public interface.
  * Props to Dean Edwards' addEvent library for many of the ideas.
  */
+ // 事件操作相关处理模块
 jQuery.event = {
 
 	global: {},

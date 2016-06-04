@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="../jquery-2.0.3.js"> </script>
+</head>
+<body>
+	<a href="abc.html" class="csstest" style="font-size: 30px;" id="a">link</a>
+	<input type="text" value="123" id="text">
+	<input type="checkbox" checked="checked" id="checkbox">
+	<script >
+	console.info( $('#a').attr('href') ); // abc.html
+	console.info( $('#a').prop('href') ); // file:///H:/open/ws-nuysoft/com.jquery/jquery/abc.html
+	 
+	console.info( $('#a').attr('class') ); // csstest
+	console.info( $('#a').prop('class') ); // csstest
+	 
+	//console.info( document.getElementById('a').getAttribute('class') ); // csstest
+	//console.info( document.getElementById('a').className ); // csstest
+	 
+	console.info( $('#a').attr('style') ); // font-size: 30px;
+	console.info( $('#a').prop('style') ); // CSSStyleDeclaration { 0="font-size", fontSize="30px", ...}
+	//console.info( document.getElementById('a').getAttribute('style') ); // font-size: 30px;
+	//console.info( document.getElementById('a').style ); // CSSStyleDeclaration { 0="font-size", fontSize="30px", ...}
+	 
+	console.log( $('#text').attr('value') ); // 123
+	console.info( $('#text').prop('value') ); // 123
+	 
+
+	console.info( $('#checkbox').attr('checked') ); // checked
+	console.info( $('#checkbox').prop('checked') ); // true
+	</script>
+</body>
+</html>

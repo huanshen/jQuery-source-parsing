@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="../jquery-2.0.3.js"> </script>
+</head>
+<body>
+
+	<script >
+		//在当前页面内追加换行标签和指定的HTML内容
+		function w( html ){
+		    document.body.innerHTML += "<br/>" + html;
+		}
+
+
+
+		console.log( $.isXMLDoc( document ) ); // false
+		console.log( $.isXMLDoc( document.body ) ); // false
+		console.log($.isXMLDoc( document.getElementById("btn")  )); // false
+
+
+		var xmlStr = '<?xml version="1.0" encoding="UTF-8"?>';
+		xmlStr += '<user>';
+		xmlStr += '<username>CodePlayer</username>';
+		xmlStr += '</user>';
+
+
+		var xmlDoc = $.parseXML( xmlStr );
+		console.log($.isXMLDoc( xmlDoc ) ); // true
+	</script>
+</body>
+</html>
