@@ -5015,20 +5015,26 @@ function safeActiveElement() {
 jQuery.event = {
 
 	global: {},
-
+	// 事件的 add 方法
+	// jQuery 从 1.2.3 版本引入数据缓存系统，贯穿内部，为整个体系服务，事件体系也引入了这个缓存机制
 	add: function( elem, types, handler, data, selector ) {
 
 		var handleObjIn, eventHandle, tmp,
 			events, t, handleObj,
 			special, handlers, type, namespaces, origType,
+			// 添加或读取一个仅供内部使用的数据缓存
+			// 第一步：获取数据缓存
 			elemData = data_priv.get( elem );
 
 		// Don't attach events to noData or text/comment nodes (but allow plain objects)
+		// 为空返回
 		if ( !elemData ) {
 			return;
 		}
 
 		// Caller can pass in an object of custom data in lieu of the handler
+		// 这里在之前一直不明白为什么要这么做，原因就是这里的 handler 可以是一个function,即我们平时所说的绑定的事件方法
+        // 同时也可以是一个事件对象，也就是下面所说的 handleObj ,那么如果是在 jQuery 的内部是可以传递一个事件对象过来的
 		if ( handler.handler ) {
 			handleObjIn = handler;
 			handler = handleObjIn.handler;
@@ -5036,32 +5042,63 @@ jQuery.event = {
 		}
 
 		// Make sure that the handler has a unique ID, used to find/remove it later
+		// 生成唯一的 guid
+		// 第二步：创建编号
 		if ( !handler.guid ) {
 			handler.guid = jQuery.guid++;
 		}
 
 		// Init the element's event structure and main handler, if this is the first
+		// 如果缓存数据中没有 events 数据，第一次调用的时候
+		// 第三步：分解事件名与句柄
 		if ( !(events = elemData.events) ) {
+			// 则初始化events
 			events = elemData.events = {};
 		}
+		// 如果缓存数据中没有 handle 数据
 		if ( !(eventHandle = elemData.handle) ) {
+			// 定义事件处理函数
 			eventHandle = elemData.handle = function( e ) {
 				// Discard the second event of a jQuery.event.trigger() and
 				// when an event is called after a page has unloaded
+				// 取消jQuery.event.trigger第二次触发事件
 				return typeof jQuery !== core_strundefined && (!e || jQuery.event.triggered !== e.type) ?
+					// jQuery.event.dispatch -- 分派（执行）事件处理函数
 					jQuery.event.dispatch.apply( eventHandle.elem, arguments ) :
 					undefined;
 			};
 			// Add elem as a property of the handle fn to prevent a memory leak with IE non-native events
+			// 定义事件处理器对应的元素，用于防止 IE 非原生事件中的内存泄露
 			eventHandle.elem = elem;
 		}
+		// events，eventHandle 都是 elemData 缓存对象内部的，可见
+		// 在 elemData 中有两个重要的属性
+		// 一个是 events，是 jQuery 内部维护的事件列队
+		// 一个是 handle，是实际绑定到 elem 中的事件处理函数
+		// 之后的代码无非就是对这 2 个对象的筛选，分组，填充
 
 		// Handle multiple events separated by a space
+		// 事件可能是通过空格键分隔的字符串，所以将其变成字符串数组
+		// core_rnotwhite = /\S+/g;  -- 匹配任意不是空白符的字符
+		// 第四步: 填充事件名与相应事件句柄
 		types = ( types || "" ).match( core_rnotwhite ) || [""];
 		t = types.length;
+		// 遍历所有事件
+		// 多事件处理
+		// 如果是多事件分组的情况 jQuery(...).bind("mouseover mouseout", fn);
+		// 事件可能是通过空格键分隔的字符串，所以将其变成字符串数组
 		while ( t-- ) {
+			// 尝试取出事件的 namespace，如aaa.bbb.ccc
 			tmp = rtypenamespace.exec( types[t] ) || [];
+			// 取出事件，如aaa
 			type = origType = tmp[1];
+			// 取出事件命名空间，如bbb.ccc，并根据"."分隔成数组
+			// 增加命名空间处理
+			// 事件名称可以添加指定的 event namespaces（命名空间） 来简化删除或触发事件。例如，
+			// "click.myPlugin.simple" 为 click 事件同时定义了两个命名空间 myPlugin 和 simple。通过上述方法绑定的 click 事件处理，可以用
+			// .off("click.myPlugin") 或 .off("click.simple") 删除绑定到相应元素的 Click 事件处理程序，而不会干扰其他绑定在该元素上的“click（点击）” 事件。
+			//命名空间类似CSS类，因为它们是不分层次的;只需要有一个名字相匹配即可。
+			// 以下划线开头的名字空间是供 jQuery 使用的。
 			namespaces = ( tmp[2] || "" ).split( "." ).sort();
 
 			// There *must* be a type, no attaching namespace-only handlers
@@ -5070,15 +5107,19 @@ jQuery.event = {
 			}
 
 			// If event changes its type, use the special event handlers for the changed type
+			// 事件是否会改变当前状态，如果会则使用特殊事件
 			special = jQuery.event.special[ type ] || {};
 
 			// If selector defined, determine special event api type, otherwise given type
+			// 根据是否已定义 selector ，决定使用哪个特殊事件 api ，如果没有非特殊事件，则用 type
 			type = ( selector ? special.delegateType : special.bindType ) || type;
 
 			// Update special based on newly reset type
+			// 根据状态改变后的特殊事件
 			special = jQuery.event.special[ type ] || {};
 
 			// handleObj is passed to all event handlers
+			// 组装用于特殊事件处理的对象
 			handleObj = jQuery.extend({
 				type: type,
 				origType: origType,
@@ -5091,6 +5132,7 @@ jQuery.event = {
 			}, handleObjIn );
 
 			// Init the event handler queue if we're the first
+			// 初始化事件处理列队，如果是第一次使用
 			if ( !(handlers = events[ type ]) ) {
 				handlers = events[ type ] = [];
 				handlers.delegateCount = 0;
@@ -5098,35 +5140,46 @@ jQuery.event = {
 				// Only use addEventListener if the special events handler returns false
 				if ( !special.setup || special.setup.call( elem, data, namespaces, eventHandle ) === false ) {
 					if ( elem.addEventListener ) {
+						// 关键在这里：底层的绑定接口
+						// false 是在冒泡阶段触发
 						elem.addEventListener( type, eventHandle, false );
 					}
 				}
 			}
-
+			// 通过特殊事件 add 处理事件
+						// 什么时候要用到自定义函数？
+						// 有些浏览器并不兼容某类型的事件，如IE6～8不支持hashchange事件，你无法通过jQuery(window).bind('hashchange', callback)来绑定这个事件，
+						//这个时候你就可以通过jQuery自定义事件接口来模拟这个事件，做到跨浏览器兼容。
 			if ( special.add ) {
+				// 添加事件,注意参数handleObj是对象
 				special.add.call( elem, handleObj );
-
+				// 设置处理函数的 id
 				if ( !handleObj.handler.guid ) {
 					handleObj.handler.guid = handler.guid;
 				}
 			}
 
 			// Add to the element's handler list, delegates in front
+			// 将事件处理函数推入处理列表
 			if ( selector ) {
+				// 冒泡标记
 				handlers.splice( handlers.delegateCount++, 0, handleObj );
 			} else {
 				handlers.push( handleObj );
 			}
 
 			// Keep track of which events have ever been used, for event optimization
+			// 表示事件曾经使用过，用于事件优化
 			jQuery.event.global[ type ] = true;
 		}
 
 		// Nullify elem to prevent memory leaks in IE
+		// 设置为null避免IE中循环引用导致的内存泄露
 		elem = null;
 	},
 
 	// Detach an event or set of events from an element
+	// 移除事件是主要方法
 	remove: function( elem, types, handler, selector, mappedTypes ) {
 
 		var j, origCount, tmp,
@@ -5157,6 +5210,7 @@ jQuery.event = {
 			special = jQuery.event.special[ type ] || {};
 			type = ( selector ? special.delegateType : special.bindType ) || type;
 			handlers = events[ type ] || [];
+			//两个"\"相当于一个"\"
 			tmp = tmp[2] && new RegExp( "(^|\\.)" + namespaces.join("\\.(?:.*\\.|)") + "(\\.|$)" );
 
 			// Remove matching events
@@ -5196,7 +5250,8 @@ jQuery.event = {
 			data_priv.remove( elem, "events" );
 		}
 	},
-
+	// jQuery触发事件的核心方法是 jQuery.event.trigger。
+	// 它提供给客户端程序员使用的触发事件方法有两个：$.fn.trigger / $.fn.triggerHandler
 	trigger: function( event, data, elem, onlyHandlers ) {
 
 		var i, cur, tmp, bubbleType, ontype, handle, special,
@@ -5207,15 +5262,17 @@ jQuery.event = {
 		cur = tmp = elem = elem || document;
 
 		// Don't do events on text and comment nodes
+		//文本节点3 注释节点8
 		if ( elem.nodeType === 3 || elem.nodeType === 8 ) {
 			return;
 		}
 
 		// focus/blur morphs to focusin/out; ensure we're not firing them right now
+		// focus/blur 将变形为 focusin/focusout 另行处理
 		if ( rfocusMorph.test( type + jQuery.event.triggered ) ) {
 			return;
 		}
-
+		// 对具有命名空间事件的处理
 		if ( type.indexOf(".") >= 0 ) {
 			// Namespaced trigger; create a regexp to match event type in handle()
 			namespaces = type.split(".");
@@ -5273,6 +5330,11 @@ jQuery.event = {
 		}
 
 		// Fire handlers on the event path
+		// 取handle
+		// 执行
+		// 执行通过onXXX方式添加的事件（如onclick="fun()"）
+		// 取父元素
+		// while循环不断重复这四步以模拟事件冒泡。直到window对象
 		i = 0;
 		while ( (cur = eventPath[i++]) && !event.isPropagationStopped() ) {
 
@@ -5295,6 +5357,7 @@ jQuery.event = {
 		event.type = type;
 
 		// If nobody prevented the default action, do it now
+		// 这一段是对于浏览器默认行为的触发
 		if ( !onlyHandlers && !event.isDefaultPrevented() ) {
 
 			if ( (!special._default || special._default.apply( eventPath.pop(), data ) === false) &&
@@ -5325,7 +5388,7 @@ jQuery.event = {
 
 		return event.result;
 	},
-
+	// 分派（执行）事件处理函数
 	dispatch: function( event ) {
 
 		// Make a writable jQuery.Event from the native event object
@@ -5384,7 +5447,8 @@ jQuery.event = {
 
 		return event.result;
 	},
-
+	// 事件处理器
+	// 针对事件委托和原生事件（例如"click"）绑定，区分对待
 	handlers: function( event, handlers ) {
 		var i, matches, sel, handleObj,
 			handlerQueue = [],
@@ -5432,11 +5496,15 @@ jQuery.event = {
 	},
 
 	// Includes some event props shared by KeyEvent and MouseEvent
+	// 存储了原生事件对象 event 的通用属性
 	props: "altKey bubbles cancelable ctrlKey currentTarget eventPhase metaKey relatedTarget shiftKey target timeStamp view which".split(" "),
-
+	// 对象用于缓存不同事件所属的事件类别
+	// fixHooks['click'] === jQuery.event.mouseHooks
+	// fixHooks['keydown'] === jQuery.event.keyHooks
 	fixHooks: {},
 
 	keyHooks: {
+		// 存储键盘事件的特有属性
 		props: "char charCode key keyCode".split(" "),
 		filter: function( event, original ) {
 
@@ -5450,7 +5518,9 @@ jQuery.event = {
 	},
 
 	mouseHooks: {
+		// 存储鼠标事件的特有属性
 		props: "button buttons clientX clientY offsetX offsetY pageX pageY screenX screenY toElement".split(" "),
+		// 用于修改鼠标事件的属性兼容性问题，用于统一接口
 		filter: function( event, original ) {
 			var eventDoc, doc, body,
 				button = original.button;
@@ -5474,7 +5544,7 @@ jQuery.event = {
 			return event;
 		}
 	},
-
+	// 对游览器的差异性进行包装处理
 	fix: function( event ) {
 		if ( event[ jQuery.expando ] ) {
 			return event;
@@ -5493,7 +5563,7 @@ jQuery.event = {
 				{};
 		}
 		copy = fixHook.props ? this.props.concat( fixHook.props ) : this.props;
-
+		// 将浏览器原生 Event 的属性赋值到新创建的jQuery.Event对象中去
 		event = new jQuery.Event( originalEvent );
 
 		i = copy.length;
@@ -5597,7 +5667,7 @@ jQuery.removeEvent = function( elem, type, handle ) {
 		elem.removeEventListener( type, handle, false );
 	}
 };
-
+// jQuery 重写了原生 event 事件
 jQuery.Event = function( src, props ) {
 	// Allow instantiation without the 'new' keyword
 	if ( !(this instanceof jQuery.Event) ) {
@@ -5715,13 +5785,18 @@ if ( !jQuery.support.focusinBubbles ) {
 		};
 	});
 }
-
+// jQuery 对象方法
 jQuery.fn.extend({
-
+	// events：事件名
+	// selector: 一个选择器字符串，用于过滤出被选中的元素中能触发事件的后代元素
+	// data: 当一个事件被触发时，要传递给事件处理函数的
+	// handler: 事件被触发时，执行的函数
+	// on 方法实质只完成一些参数调整的工作，而实际负责事件绑定的是其内部 jQuery.event.add 方法
 	on: function( types, selector, data, fn, /*INTERNAL*/ one ) {
 		var origFn, type;
 
 		// Types can be a map of types/handlers
+		// types 参数可能是个对象 传入了多个事件
 		if ( typeof types === "object" ) {
 			// ( types-Object, selector, data )
 			if ( typeof selector !== "string" ) {
