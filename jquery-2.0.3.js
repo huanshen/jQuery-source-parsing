@@ -5089,6 +5089,7 @@ jQuery.event = {
 		// 事件可能是通过空格键分隔的字符串，所以将其变成字符串数组
 		while ( t-- ) {
 			// 尝试取出事件的 namespace，如aaa.bbb.ccc
+			// 如"mouseover.a.b" → ["mouseover.a.b", "mouseover", "a.b"]
 			tmp = rtypenamespace.exec( types[t] ) || [];
 			// 取出事件，如aaa
 			type = origType = tmp[1];
@@ -5099,6 +5100,7 @@ jQuery.event = {
 			// .off("click.myPlugin") 或 .off("click.simple") 删除绑定到相应元素的 Click 事件处理程序，而不会干扰其他绑定在该元素上的“click（点击）” 事件。
 			//命名空间类似CSS类，因为它们是不分层次的;只需要有一个名字相匹配即可。
 			// 以下划线开头的名字空间是供 jQuery 使用的。
+			// 取出事件命名空间，如a.b，并根据"."分隔成数组
 			namespaces = ( tmp[2] || "" ).split( "." ).sort();
 
 			// There *must* be a type, no attaching namespace-only handlers
@@ -5734,6 +5736,7 @@ jQuery.Event.prototype = {
 
 // Create mouseenter/leave events using mouseover/out and event-time checks
 // Support: Chrome 15+
+// 创建mouseenter mouseleave事件，将mouseenter修正为mouseover，mouseleave修正为mouseout
 jQuery.each({
 	mouseenter: "mouseover",
 	mouseleave: "mouseout"
@@ -5762,6 +5765,7 @@ jQuery.each({
 
 // Create "bubbling" focus and blur events
 // Support: Firefox, Chrome, Safari
+// 如果不支持focusin事件冒泡，则转为focus实现（focusin → focus, focusout → blur）
 if ( !jQuery.support.focusinBubbles ) {
 	jQuery.each({ focus: "focusin", blur: "focusout" }, function( orig, fix ) {
 
@@ -5792,6 +5796,13 @@ jQuery.fn.extend({
 	// data: 当一个事件被触发时，要传递给事件处理函数的
 	// handler: 事件被触发时，执行的函数
 	// on 方法实质只完成一些参数调整的工作，而实际负责事件绑定的是其内部 jQuery.event.add 方法
+	//只有在执行one方法的时候，one才会被赋值为1，且是内部调用的
+	/**
+	*var body = $('body')
+	*body.on('click','p',function(){
+	*    console.log(this)
+	})**/
+
 	on: function( types, selector, data, fn, /*INTERNAL*/ one ) {
 		var origFn, type;
 
@@ -5805,20 +5816,23 @@ jQuery.fn.extend({
 				selector = undefined;
 			}
 			for ( type in types ) {
+				//为每个类型添加事件
 				this.on( type, selector, data, types[ type ], one );
 			}
 			return this;
 		}
-
+		//如果传入的是2个参数，则表明data，selector，参数没有传入
 		if ( data == null && fn == null ) {
 			// ( types, fn )
 			fn = selector;
 			data = selector = undefined;
+		//如果传入的是3个参数，且其中selector === "string"，则表明data参数没有传入
 		} else if ( fn == null ) {
 			if ( typeof selector === "string" ) {
 				// ( types, selector, fn )
 				fn = data;
 				data = undefined;
+			//否则就说明没有selector传进来
 			} else {
 				// ( types, data, fn )
 				fn = data;
@@ -5828,6 +5842,7 @@ jQuery.fn.extend({
 		}
 		if ( fn === false ) {
 			fn = returnFalse;
+		//fn为空，则不绑定，直接返回
 		} else if ( !fn ) {
 			return this;
 		}
@@ -5837,12 +5852,14 @@ jQuery.fn.extend({
 			fn = function( event ) {
 				// Can use an empty set, since event contains the info
 				jQuery().off( event );
+
 				return origFn.apply( this, arguments );
 			};
 			// Use same guid so caller can remove using origFn
 			fn.guid = origFn.guid || ( origFn.guid = jQuery.guid++ );
 		}
 		return this.each( function() {
+			//最终调用add来进行绑定
 			jQuery.event.add( this, types, fn, data, selector );
 		});
 	},
