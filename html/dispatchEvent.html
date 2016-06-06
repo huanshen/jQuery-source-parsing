@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<script src="../jquery-2.0.3.js"> </script>
+<!-----------------------------测试代码开始-------------------------------->
+
+<div id="output">点击按钮对比.<br /></div>
+<button id="fireNative">dispatchEvent触发 (浏览器)</button>
+<button id="fireJQuery">trigger (jQuery)触发</button>
+
+
+<span id="preserve344e7c3f3518471fb7f40214cb5f7904" class="wlWriterPreserve"><script>
+
+var $output = $('#output');
+
+document.addEventListener('eventDemo', function () {
+    $output.html($output.html()+'调用 dispatchEvent listener.<br />');
+}, false);
+$(document).bind('eventDemo', function () {
+    $output.html($output.html()+'调用 jQuery listener.<br />');
+});
+
+$('#fireNative').click(function() {
+    var evt = document.createEvent('CustomEvent');
+    evt.initCustomEvent('eventDemo', false, false, null);
+    document.dispatchEvent(evt);
+});
+
+$('#fireJQuery').click(function() {
+    $(document).trigger('eventDemo');
+});
+
+
+</script></span>
+
+
+<!-----------------------------测试结束-------------------------------------->
+</body>
+</html>

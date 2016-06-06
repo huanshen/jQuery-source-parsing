@@ -5182,7 +5182,7 @@ jQuery.event = {
 
 	// Detach an event or set of events from an element
 	// 移除事件是主要方法
-	remove: function( elem, types, handler, selector, mappedTypes ) {
+	removdelegateCounte: function( elem, types, handler, selector, mappedTypes ) {
 
 		var j, origCount, tmp,
 			events, t, handleObj,
@@ -5460,22 +5460,28 @@ jQuery.event = {
 		// Find delegate handlers
 		// Black-hole SVG <use> instance trees (#13180)
 		// Avoid non-left-click bubbling in Firefox (#3861)
+		//火狐浏览器右键或者中键点击时，会错误地冒泡到document的click事件，并且stopPropagation也无效
 		if ( delegateCount && cur.nodeType && (!event.button || event.type !== "click") ) {
-
+			//在当前元素的父辈或者祖先辈有可能存在着事件绑定，根据冒泡的特性，
+			//我们的依次从当前节点往上遍历一直到绑定事件的节点，取出每个绑定事件的节点对应的事件处理器
+			//这里就有个cur === this 通过这个判断来处理是否为正确的委托的
 			for ( ; cur !== this; cur = cur.parentNode || this ) {
 
 				// Don't process clicks on disabled elements (#6911, #8165, #11382, #11764)
+				//遍历的过程需要过滤一些节点，比如disabled 属性规定应该禁用 input 元素，被禁用的 input 元素既不可用，也不可点击
 				if ( cur.disabled !== true || event.type !== "click" ) {
 					matches = [];
 					for ( i = 0; i < delegateCount; i++ ) {
 						handleObj = handlers[ i ];
 
 						// Don't conflict with Object.prototype properties (#13203)
+						//此时开始处理委托过滤的关系了
 						sel = handleObj.selector + " ";
 
 						if ( matches[ sel ] === undefined ) {
 							matches[ sel ] = handleObj.needsContext ?
 								jQuery( sel, this ).index( cur ) >= 0 :
+								//我们先确定下在当前的上下文中是否能找到这个selector元素
 								jQuery.find( sel, this, null, [ cur ] ).length;
 						}
 						if ( matches[ sel ] ) {
@@ -5483,6 +5489,8 @@ jQuery.event = {
 						}
 					}
 					if ( matches.length ) {
+						//如果能找到正确，是存在当然这个事件节点下面的元素，就是说这个节点是需要委托处理的
+						//同样的的组成一个handlerQueue
 						handlerQueue.push({ elem: cur, handlers: matches });
 					}
 				}
