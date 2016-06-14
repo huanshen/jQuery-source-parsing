@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="../jquery-2.0.3.js"> </script>
+</head>
+<body>
+	<h1>jQuery 源码解读 by huanshen</h1>
+	<h1>jQuery 源码解读 by huanshen</h1>
+	<div>jQuery1 <p>p</p></div>
+	<div>jQuery2 </div>
+	<div>jQuery3 </div>
+	<ul></ul>
+	<script >
+	
+	console.log($("div"));
+	console.log($("<h1>"));
+	console.log($("#id"));
+	console.log($("p","div"));
+	console.log($("p",$("div")));
+	console.log($("<li title='榴莲'>榴莲</li>"));
+	$li3=$("<li title='榴莲'>榴莲</li>");
+	$("ul").append($li3);
+	</script>
+</body>
+</html>
