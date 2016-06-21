@@ -3,21 +3,23 @@
 <head>
 <meta charset="utf-8">
 <script src="../jquery-2.0.3.js"> </script>
-<style>
-	a{
-		text-decoration: none;
-	}
-</style>
 </head>
 <body>
 	<div >博客：<a href="http://www.cnblogs.com/huansky/">Welcome to my blog: huansky</a></div>
 	<div >Github:<a href="https://github.com/huanshen"> Welcome to my github: huanshen</a></div>
 	<script >
-	var arr = []; 
-	arr[1] = 1;
-	var arr2=[1,2,3,4];
-	var t=$.merge(arr,arr2);
-	console.log(t);
+	var t={};
+	console.log($.isPlainObject(t));
+
+	var t={t:1};
+	console.log($.isPlainObject(t));
+
+	var t=new Object();
+	console.log($.isPlainObject(t));
+
+	var t=$("div");
+	console.log(t instanceof Object);
+	console.log($.isPlainObject(t));
 	</script>
 </body>
 </html>

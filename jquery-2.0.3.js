@@ -32,7 +32,7 @@ var
 	// Use the correct document accordingly with window argument (sandbox)
 	location = window.location,
 	document = window.document,
-	docElem = document.documentElement,
+	docElem = document.documentElement,//html
 
 	// Map over jQuery in case of overwrite
 	_jQuery = window.jQuery,
@@ -65,6 +65,9 @@ var
 	},
 
 	// Used for matching numbers
+	//搞不清楚加和不加source的区别
+	//source 属性用于返回模式匹配所用的文本。
+	//相当于core_pnum=[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)
 	core_pnum = /[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source,
 
 	// Used for splitting on whitespace
@@ -73,6 +76,8 @@ var
 	// A simple way to check for HTML strings
 	// Prioritize #id over <tag> to avoid XSS via location.hash (#9521)
 	// Strict HTML recognition (#11290: must start with <)
+	//一个简单的检测HTML字符串的表达式
+	//#([\w-]*))$匹配结尾带上#号的任意字符，包括下划线与-
 	rquickExpr = /^(?:\s*(<[\w\W]+>)[^>]*|#([\w-]*))$/,
 
 	// Match a standalone tag
@@ -80,6 +85,7 @@ var
 	// rsingleTag.test('<html></html>') --> true
 	// rsingleTag.test('<img/>') --> true
 	// rsingleTag.test('<div class="foo"></div>') --> false
+	//\1类似replace时候用的′1',可以匹配第一个子匹配
 	rsingleTag = /^<(\w+)\s*\/?>(?:<\/\1>|)$/,
 
 	// Matches dashed string for camelizing
@@ -158,6 +164,7 @@ jQuery.fn = jQuery.prototype = {
 			if ( match && (match[1] || !context) ) {
 
 				// HANDLE: $(html) -> $(array)
+				//match[1]存在说明是html标签
 				if ( match[1] ) {
 					context = context instanceof jQuery ? context[0] : context;
 
@@ -169,6 +176,7 @@ jQuery.fn = jQuery.prototype = {
 					) );
 
 					// HANDLE: $(html, props)
+					//match[1] 是纯标签 
 					if ( rsingleTag.test( match[1] ) && jQuery.isPlainObject( context ) ) {
 						for ( match in context ) {
 							// Properties of context are called as methods if possible
@@ -185,6 +193,7 @@ jQuery.fn = jQuery.prototype = {
 					return this;
 
 				// HANDLE: $(#id)
+				//match[1]没有的话，很有可能传入的就是id,match[2]不包含#
 				} else {
 					elem = document.getElementById( match[2] );
 
