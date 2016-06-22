@@ -7,15 +7,23 @@
 <body>
 	<div >博客：<a href="http://www.cnblogs.com/huansky/">Welcome to my blog: huansky</a></div>
 	<div >Github:<a href="https://github.com/huanshen"> Welcome to my github: huanshen</a></div>
+	<div id="huansky" class="huansky">你好</div>
 	<script >
-	var arr = []; 
-	arr[1] = 1;
-	var rut= $.inArray(undefined, arr, 0);
-	console.log(rut);
+		function log (str) {
+			console.log(str);
+		}
 
-	var arr="tttt";
-	var arr1=$.makeArray(arr,{1:0});
-	console.log(arr1);
+		//log($($("#huansky")))
+
+		var dom=document.getElementById("huansky");
+		//log($(dom));
+
+		//log($(".huansky",".huansky"))
+
+		//log($("#huansky"))
+		
+		log($("div"))
+
 	</script>
 </body>
 </html>

@@ -146,6 +146,7 @@ jQuery.fn = jQuery.prototype = {
 
 			} else {
 				match = rquickExpr.exec( selector );
+				console.log(match);
 			}
 
 			// Match html or make sure no context is specified for #id
@@ -432,6 +433,7 @@ jQuery.extend = jQuery.fn.extend = function() {
 
 				// Prevent never-ending loop
 				// 防止有环，例如 extend(true, target, {'target':target});
+				//也就是target对象是options对象的属性，那就不用复制了，继续下一个
 				if ( target === copy ) {
 					continue;
 				}

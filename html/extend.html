@@ -6,35 +6,48 @@
 <script src="../sizzle.js"> </script>
 </head>
 <body>
-</body>
-<script >
-    var tt={name:1,age:2};
-    var y=jQuery.extend( tt, "options" );
-    console.log(y);
-    console.log(tt);
+    <div >博客：<a href="http://www.cnblogs.com/huansky/">Welcome to my blog: huansky</a></div>
+    <div >Github:<a href="https://github.com/huanshen"> Welcome to my github: huanshen</a></div>
+    <script >
+        var tt={name:1,age:2};
+        var y=jQuery.extend( tt, "options" );
+        console.log(y);
+        console.log(tt);
 
-    var tt={name:1,age:2};
-    var y=jQuery.extend( tt, ["options",5454] );
-    console.log(y);
-    console.log(tt);
+        var tt={name:1,age:2};
+        var y=jQuery.extend( tt, ["options",5454] );
+        console.log(y);
+        console.log(tt);
 
-    var obj1={
-        one:{
-            two:{
-                three:function(){
-                    return "three";
-                }
-            },
-            two2:{
-                three3:function(){
-                    console.log("three3")
+        var obj1={
+            one:{
+                two:{
+                    three:function(){
+                        return "three";
+                    }
+                },
+                two2:{
+                    three3:function(){
+                        console.log("three3")
+                    }
                 }
             }
         }
-    }
-    var y=jQuery.extend( {}, obj1 );
-    console.log(y);
-    console.log(obj1);
-    console.log(obj1.one.two.three())
+        var y=jQuery.extend( {}, obj1 );
+        console.log(y);
+        console.log(obj1);
+        console.log(obj1.one.two.three())
+
+        var obj11={na:{t:"tt"},ba:456};
+        var obj22={na:{n:"nn"},cc:"cc"};
+        var obj111=jQuery.extend( false,obj11, obj22 );
+         console.log(obj111);
+
+        var obj222=jQuery.extend( true, obj11, obj22 );
+        console.log(obj222);
+        //当你执行true,也就是深复制的时候，如果两个对象具有同名属性，
+        //且这两个对象的同名属性值都是对象，那么就会将第二个对象的同名属性值的属性一一添加到第一个对象的同名属性值上。此时第一个对象的同名属性值上保留原有的属性
+        //如果是false的话，就会直接覆盖第一个对象的同名属性值上的原有的属性，
+
     </script>
 </html>
