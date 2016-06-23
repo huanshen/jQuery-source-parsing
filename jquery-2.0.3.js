@@ -793,6 +793,8 @@ jQuery.extend({
 			length = obj.length,
 			isArray = isArraylike( obj );
 
+		//如果args存在的话，callback中传入的参数是grgs,each循环次数确是由obj来确定的
+
 		if ( args ) {
 			if ( isArray ) {
 				for ( ; i < length; i++ ) {
@@ -813,6 +815,9 @@ jQuery.extend({
 			}
 
 		// A special, fast, case for the most common use of each
+		//注意下面用的是call,上面是apply
+		//apply 的第二个参数以数组的形式传入,但是真正运行的时候，
+		//传入的数组参数会变成一个个的形式,而不是一个数组参数
 		} else {
 			if ( isArray ) {
 				for ( ; i < length; i++ ) {

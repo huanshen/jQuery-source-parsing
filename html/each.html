@@ -15,8 +15,12 @@
 	console.log(j);  //1;   1    每次迭代输出一个值
 	},tt)
 
+	$.each(t,function(j,k,l){
+	console.log(j+" "+k+" "+l);  //1 2 3;   1 2 3    每次迭代输出一个值
+	},tt)
+
 	$.each(tt,function(j){
-	console.log(j);  //1;   1
+	console.log(j);  
 	},t)//undefinded ;undefined ;undefined   每次迭代输出一个值
 
 	$.each(t,function(j){
@@ -30,6 +34,21 @@
 	$.each(tt,function(i,j){
 	console.log(i+" "+j);//0 1; 1 2; 2 3;
 	})
+
+	//这部分用来说明apply的用法的
+	function Person(name,age) {   
+    this.name=name; this.age=age;   
+	}   
+	 /*定义一个学生类*/   
+	function Student(name,age,grade) {   
+	    Person.apply(this,arguments); this.grade=grade;   
+	}   
+	//创建一个学生类   
+	var student=new Student("qian",21,"一年级");   
+	//测试   
+	console.log("name:"+student.name+"\n"+"age:"+student.age+"\n"+"grade:"+student.grade);   
+	t=" 45  43  ";
+	console.log(t.trim)
 	</script>
 </body>
 </html>
