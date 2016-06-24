@@ -883,7 +883,8 @@ jQuery.extend({
 	inArray: function( elem, arr, i ) {
 		return arr == null ? -1 : core_indexOf.call( arr, elem, i );
 	},
-
+	//把second中的属性添加到first中
+	//second可以是数组或者类数组对象，又或者包含0,1属性的东西
 	merge: function( first, second ) {
 		var l = second.length,
 			i = first.length,

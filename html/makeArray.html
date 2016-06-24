@@ -15,11 +15,22 @@
 	<script >
 	var arr="tttt";
 	var arr1=$.makeArray(arr,[1,0]);
-	console.log(arr1);
+	console.log(arr1);//[1,0,"tttt"]
 
 	var arr="tttt";
 	var arr1=$.makeArray(arr,{1:0});
-	console.log(arr1);
+	console.log(arr1);//{1:0,NAN:"tttt"}
+
+	console.log(typeof $("div").length);
+
+	var str="tttt",
+		arr1=[1,2,3],
+		obj={1:0},
+		str2=Object(str);
+	console.log( Object(str))//{0: "t", 1: "t", 2: "t", 3: "t", length: 4, [[PrimitiveValue]]: "tttt"}
+	console.log(str2.length)//4
+	console.log(Object(arr1))//[1, 2, 3]
+	console.log(Object(obj))//{1: 0}
 	</script>
 </body>
 </html>
