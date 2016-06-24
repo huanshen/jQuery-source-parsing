@@ -933,6 +933,8 @@ jQuery.extend({
 			ret = [];
 
 		// Go through the array, translating each of the items to their
+		//如果是数组，isArray=true;
+		//与each传入参数顺序是一致的
 		if ( isArray ) {
 			for ( ; i < length; i++ ) {
 				value = callback( elems[ i ], i, arg );
@@ -943,6 +945,7 @@ jQuery.extend({
 			}
 
 		// Go through every key on the object,
+		//如果是对象
 		} else {
 			for ( i in elems ) {
 				value = callback( elems[ i ], i, arg );
@@ -978,8 +981,10 @@ jQuery.extend({
 		}
 
 		// Simulated bind
+		//如果传入的参数多余2个，把多余的参数转变为数组。
 		args = core_slice.call( arguments, 2 );
 		proxy = function() {
+			//这里用到了柯里化
 			return fn.apply( context || this, args.concat( core_slice.call( arguments ) ) );
 		};
 
